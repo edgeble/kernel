@@ -13,6 +13,14 @@
 	compatible = "radxa,rockpi4c", "radxa,rockpi4", "rockchip,rk3399";
 };
 
+&pinctrl {
+	usb2 {
+		vcc5v0_host_en: vcc5v0-host-en {
+			rockchip,pins = <3 RK_PD6 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+};
+
 &sdio0 {
 	status = "okay";
 
@@ -46,9 +54,8 @@
 };
 
 &vcc5v0_host {
+	enable-active-high;
 	gpio = <&gpio3 RK_PD6 GPIO_ACTIVE_HIGH>;
-};
-
-&vcc5v0_host_en {
-	rockchip,pins = <3 RK_PD6 RK_FUNC_GPIO &pcfg_pull_none>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&vcc5v0_host_en>;
 };
