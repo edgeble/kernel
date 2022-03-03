@@ -127,6 +127,25 @@
 		regulator-max-microvolt = <1400000>;
 		vin-supply = <&vcc5v0_sys>;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&power_led_gpio>, <&status_led_gpio>;
+
+		power-status {
+			label = "power";
+			gpios = <&gpio3 RK_PD4 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "default-on";
+			status = "disabled";
+		};
+
+		system-status {
+			label = "status";
+			gpios = <&gpio3 RK_PD5 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+		};
+	};
 };
 
 &cpu_l0 {
@@ -520,6 +539,16 @@
 
 		sdio0_clk: sdio0-clk {
 			rockchip,pins = <2 RK_PD1 1 &pcfg_pull_none_20ma>;
+		};
+	};
+
+	leds {
+		power_led_gpio: power_led_gpio {
+			rockchip,pins = <3 RK_PD4 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+
+		status_led_gpio: status_led_gpio {
+			rockchip,pins = <3 RK_PD5 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 
