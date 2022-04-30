@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include "rv1126.dtsi"
+#include "ecm0-radxa-10p1inch-display.dtsi"
 
 / {
 	model = "Edgeble AI Edge Compute Module 0 Carrier board";
