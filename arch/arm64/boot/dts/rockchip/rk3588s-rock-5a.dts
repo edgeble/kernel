@@ -538,6 +538,18 @@
 	status = "okay";
 };
 
+&usbhost3_0 {
+	status = "okay";
+};
+
+&usbhost_dwc3_0 {
+	status = "okay";
+};
+
+&combphy2_psu {
+	status = "okay";
+};
+
 &usb_host1_ehci {
 	status = "okay";
 };
