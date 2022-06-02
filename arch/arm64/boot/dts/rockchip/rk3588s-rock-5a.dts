@@ -17,6 +17,7 @@
 #include "rk3588s.dtsi"
 #include "rk3588-rk806-single.dtsi"
 #include "rk3588-linux.dtsi"
+#include "rk3588s-rock-5a-imx415.dtsi"
 
 / {
 	model = "Radxa ROCK 5A";
