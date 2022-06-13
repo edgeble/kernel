@@ -8,6 +8,7 @@
 
 #include "rv1126.dtsi"
 #include "ecm0-radxa-10p1inch-display.dtsi"
+#include "rv1126-ecm0-dual-cameras-gc2053-gc2093.dtsi"
 
 / {
 	model = "Edgeble AI Edge Compute Module 0 Carrier board";
@@ -89,6 +90,16 @@
 		wifi_chip_type = "ap6255";
 		WIFI,host_wake_irq = <&gpio1 RK_PD1 GPIO_ACTIVE_HIGH>;
 		status = "okay";
+	};
+
+	vcc_3v3_sys: vcc-3v3-sys {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_3v3_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&vcc5v0_sys>;
 	};
 };
 
