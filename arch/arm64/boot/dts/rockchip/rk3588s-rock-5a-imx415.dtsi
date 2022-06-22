@@ -20,8 +20,8 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&mipim0_camera2_clk>;
 		power-domains = <&power RK3588_PD_VI>;
-		pwdn-gpios = <&gpio1 RK_PD5 GPIO_ACTIVE_HIGH>;
-		reset-gpios = <&gpio4 RK_PD2 GPIO_ACTIVE_LOW>;
+		pwdn-gpios = <&gpio1 RK_PD3 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio1 RK_PD2 GPIO_ACTIVE_LOW>;
 		rockchip,camera-module-index = <0>;
 		rockchip,camera-module-facing = "back";
 		rockchip,camera-module-name = "CMK-OT2022-PX1";
