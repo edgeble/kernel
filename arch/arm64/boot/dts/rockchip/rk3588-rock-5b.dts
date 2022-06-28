@@ -46,6 +46,24 @@
 		vin-supply = <&vcc12v_dcin>;
 	};
 
+	wifi_disable: wifi-diable-gpio-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "wifi_disable";
+		enable-active-high;
+		gpio = <&gpio4 RK_PA2 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	bt_wake: bt-wake-gpio-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "bt_wake";
+		enable-active-high;
+		gpio = <&gpio3 RK_PD5 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
 	vcc_1v1_nldo_s3: vcc-1v1-nldo-s3 {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc_1v1_nldo_s3";
