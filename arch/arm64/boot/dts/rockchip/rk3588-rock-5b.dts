@@ -861,11 +861,6 @@
 			 &i2s0_sdo0>;
 };
 
-&rk806master {
-	rockchip,system-power-controller;
-	vcc13-supply = <&vcc_1v1_nldo_s3>;
-};
-
 &pinctrl {
 
 	usb {
