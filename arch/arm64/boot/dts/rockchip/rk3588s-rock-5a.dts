@@ -444,6 +444,9 @@
 
 &dp0 {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&dp0_hpd>;
+	hpd-gpios = <&gpio0 RK_PC4 GPIO_ACTIVE_HIGH>;
 };
 
 &dp0_in_vp2 {
@@ -560,6 +563,7 @@
 
 &usbdp_phy0 {
 	status = "okay";
+	rockchip,dp-lane-mux = < 2 3 >;
 };
 
 &usbdp_phy0_dp {
@@ -708,6 +712,12 @@
 	headphone {
 		hp_det: hp-det {
 			rockchip,pins = <1 RK_PC4 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	dp {
+		dp0_hpd: dp0-hpd {
+			rockchip,pins = <0 RK_PC4 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 };
