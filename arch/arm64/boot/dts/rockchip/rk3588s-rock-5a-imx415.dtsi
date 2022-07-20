@@ -24,8 +24,8 @@
 		reset-gpios = <&gpio1 RK_PD2 GPIO_ACTIVE_LOW>;
 		rockchip,camera-module-index = <0>;
 		rockchip,camera-module-facing = "back";
-		rockchip,camera-module-name = "CMK-OT2022-PX1";
-		rockchip,camera-module-lens-name = "IR0147-50IRC-8M-F20";
+		rockchip,camera-module-name = "RADXA-CAMERA-4K";
+		rockchip,camera-module-lens-name = "DEFAULT";
 		port {
 			imx415_out0: endpoint {
 				remote-endpoint = <&mipidphy0_in_ucam0>;
