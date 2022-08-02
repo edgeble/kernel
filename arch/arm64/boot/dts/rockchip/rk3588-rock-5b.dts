@@ -680,7 +680,7 @@
 			compatible = "usb-c-connector";
 			label = "USB-C";
 			data-role = "dual";
-			power-role = "dual";
+			power-role = "sink";
 			try-power-role = "sink";
 			op-sink-microwatt = <1000000>;
 			sink-pdos =
