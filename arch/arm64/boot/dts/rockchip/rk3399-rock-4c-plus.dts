@@ -19,6 +19,11 @@
 		mmc1 = &sdhci;
 	};
 
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pwm2 0 25000 0>;
+	};
+
 	chosen {
 		stdout-path = "serial2:1500000n8";
 	};
@@ -456,6 +461,38 @@
 	status = "okay";
 };
 
+&mipi_dsi {
+	status = "okay";
+	clock-master;
+
+	ports {
+		mipi_out: port@1 {
+			reg = <1>;
+
+			mipi_out_panel: endpoint {
+				remote-endpoint = <&mipi_in_panel>;
+			};
+		};
+	};
+
+	panel@0 {
+		compatible = "chongzhou,cz101b4001", "jadard,jd9365da-h3";
+		reg = <0>;
+		backlight = <&backlight>;
+		vdd-supply = <&lcd_3v3>;
+		vccio-supply = <&vcc_1v8_s0>;
+		reset-gpios = <&gpio1 RK_PC2 GPIO_ACTIVE_HIGH>; /* RESX */
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_panel_reset>;
+
+		port {
+			mipi_in_panel: endpoint {
+				remote-endpoint = <&mipi_out_panel>;
+			};
+		};
+	};
+};
+
 &pinctrl {
 	bt {
 		bt_enable_h: bt-enable-h {
@@ -492,6 +529,12 @@
 
 		vsel2_gpio: vsel2-gpio {
 			rockchip,pins = <1 RK_PB6 RK_FUNC_GPIO &pcfg_pull_down>;
+		};
+	};
+
+	lcd {
+		lcd_panel_reset: lcd-panel-reset {
+			rockchip,pins = <1 RK_PC2 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
 	};
 
@@ -578,6 +621,10 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&wifi_host_wake_l>;
 	};
+};
+
+&pwm2 {
+	status = "okay";
 };
 
 &sdmmc {
