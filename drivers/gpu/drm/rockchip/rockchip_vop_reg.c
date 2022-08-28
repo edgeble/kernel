@@ -229,6 +229,7 @@ static const struct vop_intr px30_intr = {
 	.intrs = px30_vop_intrs,
 	.nintrs = ARRAY_SIZE(px30_vop_intrs),
 	.line_flag_num[0] = VOP_REG(PX30_LINE_FLAG, 0xfff, 0),
+	.line_flag_num[1] = VOP_REG(PX30_LINE_FLAG, 0xfff, 16),
 	.status = VOP_REG_MASK_SYNC(PX30_INTR_STATUS, 0xffff, 0),
 	.enable = VOP_REG_MASK_SYNC(PX30_INTR_EN, 0xffff, 0),
 	.clear = VOP_REG_MASK_SYNC(PX30_INTR_CLEAR, 0xffff, 0),
@@ -1102,6 +1103,59 @@ static const struct vop_data rk3328_vop = {
 	.win_size = ARRAY_SIZE(rk3328_vop_win_data),
 };
 
+static const struct vop_common rv1126_common = {
+	.standby = VOP_REG_SYNC(PX30_SYS_CTRL2, 0x1, 1),
+	.out_mode = VOP_REG(PX30_DSP_CTRL2, 0xf, 16),
+	.dsp_blank = VOP_REG(PX30_DSP_CTRL2, 0x1, 14),
+	.dither_down_en = VOP_REG(PX30_DSP_CTRL2, 0x1, 8),
+	.dither_down_sel = VOP_REG(PX30_DSP_CTRL2, 0x1, 7),
+	.dither_down_mode = VOP_REG(PX30_DSP_CTRL2, 0x1, 6),
+	.cfg_done = VOP_REG_SYNC(PX30_REG_CFG_DONE, 0x1, 0),
+	.dither_up = VOP_REG(PX30_DSP_CTRL2, 0x1, 2),
+	.dsp_lut_en = VOP_REG(PX30_DSP_CTRL2, 0x1, 5),
+	.gate_en = VOP_REG(PX30_DSP_CTRL2, 0x1, 0),
+};
+
+static const struct vop_modeset rv1126_modeset = {
+	.htotal_pw = VOP_REG(PX30_DSP_HTOTAL_HS_END, 0x0fff0fff, 0),
+	.hact_st_end = VOP_REG(PX30_DSP_HACT_ST_END, 0x0fff0fff, 0),
+	.vtotal_pw = VOP_REG(PX30_DSP_VTOTAL_VS_END, 0x0fff0fff, 0),
+	.vact_st_end = VOP_REG(PX30_DSP_VACT_ST_END, 0x0fff0fff, 0),
+};
+
+static const struct vop_output rv1126_output = {
+	.rgb_dclk_pol = VOP_REG(PX30_DSP_CTRL0, 0x1, 1),
+	.rgb_pin_pol = VOP_REG(PX30_DSP_CTRL0, 0x7, 2),
+	.rgb_en = VOP_REG(PX30_DSP_CTRL0, 0x1, 0),
+	.mipi_dclk_pol = VOP_REG(PX30_DSP_CTRL0, 0x1, 25),
+	.mipi_pin_pol = VOP_REG(PX30_DSP_CTRL0, 0x7, 26),
+	.mipi_en = VOP_REG(PX30_DSP_CTRL0, 0x1, 24),
+};
+
+static const struct vop_misc rv1126_misc = {
+	.global_regdone_en = VOP_REG(PX30_SYS_CTRL2, 0x1, 13),
+};
+
+static const struct vop_win_data rv1126_vop_win_data[] = {
+	{ .base = 0x00, .phy = &px30_win0_data,
+	  .type = DRM_PLANE_TYPE_PRIMARY },
+	{ .base = 0xe0, .phy = &px30_win2_data,
+	  .type = DRM_PLANE_TYPE_OVERLAY },
+};
+
+static const struct vop_data rv1126_vop = {
+	.version = VOP_VERSION(2, 0xb),
+	.intr = &rk3366_vop_intr,
+	.feature = VOP_FEATURE_INTERNAL_RGB,
+	.common = &rv1126_common,
+	.modeset = &rv1126_modeset,
+	.output = &rv1126_output,
+	.misc = &rv1126_misc,
+	.win = rv1126_vop_win_data,
+	.win_size = ARRAY_SIZE(rv1126_vop_win_data),
+	.lut_size = 1024,
+};
+
 static const struct of_device_id vop_driver_dt_match[] = {
 	{ .compatible = "rockchip,rk3036-vop",
 	  .data = &rk3036_vop },
@@ -1129,6 +1183,8 @@ static const struct of_device_id vop_driver_dt_match[] = {
 	  .data = &rk3228_vop },
 	{ .compatible = "rockchip,rk3328-vop",
 	  .data = &rk3328_vop },
+	{ .compatible = "rockchip,rv1126-vop",
+	  .data = &rv1126_vop },
 	{},
 };
 MODULE_DEVICE_TABLE(of, vop_driver_dt_match);
