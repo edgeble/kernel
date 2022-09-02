@@ -371,6 +371,14 @@
 	status = "okay";
 };
 
+&vdpu {
+	status = "okay";
+};
+
+&vdpu_mmu {
+	status = "okay";
+};
+
 &mpp_srv {
 	status = "okay";
 };
