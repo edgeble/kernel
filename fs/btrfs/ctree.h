@@ -34,6 +34,7 @@
 #include "async-thread.h"
 #include "block-rsv.h"
 #include "locking.h"
+#include "misc.h"
 
 struct btrfs_trans_handle;
 struct btrfs_transaction;
@@ -3128,9 +3129,11 @@ ssize_t btrfs_dio_rw(struct kiocb *iocb, struct iov_iter *iter, size_t done_befo
 extern const struct dentry_operations btrfs_dentry_operations;
 
 /* Inode locking type flags, by default the exclusive lock is taken */
-#define BTRFS_ILOCK_SHARED	(1U << 0)
-#define BTRFS_ILOCK_TRY 	(1U << 1)
-#define BTRFS_ILOCK_MMAP	(1U << 2)
+enum btrfs_ilock_type {
+	ENUM_BIT(BTRFS_ILOCK_SHARED),
+	ENUM_BIT(BTRFS_ILOCK_TRY),
+	ENUM_BIT(BTRFS_ILOCK_MMAP),
+};
 
 int btrfs_inode_lock(struct inode *inode, unsigned int ilock_flags);
 void btrfs_inode_unlock(struct inode *inode, unsigned int ilock_flags);
