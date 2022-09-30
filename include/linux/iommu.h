@@ -681,6 +681,9 @@ int iommu_group_claim_dma_owner(struct iommu_group *group, void *owner);
 void iommu_group_release_dma_owner(struct iommu_group *group);
 bool iommu_group_dma_owner_claimed(struct iommu_group *group);
 
+int iommu_device_claim_dma_owner(struct device *dev, void *owner);
+void iommu_device_release_dma_owner(struct device *dev);
+
 #else /* CONFIG_IOMMU_API */
 
 struct iommu_ops {};
@@ -1042,6 +1045,16 @@ static inline void iommu_group_release_dma_owner(struct iommu_group *group)
 static inline bool iommu_group_dma_owner_claimed(struct iommu_group *group)
 {
 	return false;
+}
+
+static inline int
+iommu_device_claim_dma_owner(struct device *dev, void *owner)
+{
+	return -ENODEV;
+}
+
+static inline void iommu_device_release_dma_owner(struct device *dev)
+{
 }
 #endif /* CONFIG_IOMMU_API */
 
