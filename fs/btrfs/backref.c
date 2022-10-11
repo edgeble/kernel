@@ -1641,6 +1641,30 @@ static void store_backref_shared_cache(struct btrfs_backref_share_check_ctx *ctx
 	}
 }
 
+struct btrfs_backref_share_check_ctx *btrfs_alloc_backref_share_check_ctx(void)
+{
+	struct btrfs_backref_share_check_ctx *ctx;
+
+	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
+	if (!ctx)
+		return NULL;
+
+	ulist_init(&ctx->refs);
+	ulist_init(&ctx->roots);
+
+	return ctx;
+}
+
+void btrfs_free_backref_share_ctx(struct btrfs_backref_share_check_ctx *ctx)
+{
+	if (!ctx)
+		return;
+
+	ulist_release(&ctx->refs);
+	ulist_release(&ctx->roots);
+	kfree(ctx);
+}
+
 /*
  * Check if a data extent is shared or not.
  *
@@ -1648,8 +1672,6 @@ static void store_backref_shared_cache(struct btrfs_backref_share_check_ctx *ctx
  * @bytenr:      Logical bytenr of the extent we are checking.
  * @extent_gen:  Generation of the extent (file extent item) or 0 if it is
  *               not known.
- * @roots:       List of roots this extent is shared among.
- * @tmp:         Temporary list used for iteration.
  * @ctx:         A backref sharedness check context.
  *
  * btrfs_is_data_extent_shared uses the backref walking code but will short
@@ -1665,7 +1687,6 @@ static void store_backref_shared_cache(struct btrfs_backref_share_check_ctx *ctx
  */
 int btrfs_is_data_extent_shared(struct btrfs_inode *inode, u64 bytenr,
 				u64 extent_gen,
-				struct ulist *roots, struct ulist *tmp,
 				struct btrfs_backref_share_check_ctx *ctx)
 {
 	struct btrfs_root *root = inode->root;
@@ -1683,8 +1704,8 @@ int btrfs_is_data_extent_shared(struct btrfs_inode *inode, u64 bytenr,
 	};
 	int level;
 
-	ulist_init(roots);
-	ulist_init(tmp);
+	ulist_init(&ctx->roots);
+	ulist_init(&ctx->refs);
 
 	trans = btrfs_join_transaction_nostart(root);
 	if (IS_ERR(trans)) {
@@ -1706,8 +1727,8 @@ int btrfs_is_data_extent_shared(struct btrfs_inode *inode, u64 bytenr,
 		bool is_shared;
 		bool cached;
 
-		ret = find_parent_nodes(trans, fs_info, bytenr, elem.seq, tmp,
-					roots, NULL, &shared, false);
+		ret = find_parent_nodes(trans, fs_info, bytenr, elem.seq, &ctx->refs,
+					&ctx->roots, NULL, &shared, false);
 		if (ret == BACKREF_FOUND_SHARED) {
 			/* this is the only condition under which we return 1 */
 			ret = 1;
@@ -1746,13 +1767,13 @@ int btrfs_is_data_extent_shared(struct btrfs_inode *inode, u64 bytenr,
 		 * deal with), we can not use it if we have multiple leaves
 		 * (which implies multiple paths).
 		 */
-		if (level == -1 && tmp->nnodes > 1)
+		if (level == -1 && ctx->refs.nnodes > 1)
 			ctx->use_path_cache = false;
 
 		if (level >= 0)
 			store_backref_shared_cache(ctx, root, bytenr,
 						   level, false);
-		node = ulist_next(tmp, &uiter);
+		node = ulist_next(&ctx->refs, &uiter);
 		if (!node)
 			break;
 		bytenr = node->val;
@@ -1775,8 +1796,8 @@ int btrfs_is_data_extent_shared(struct btrfs_inode *inode, u64 bytenr,
 		up_read(&fs_info->commit_root_sem);
 	}
 out:
-	ulist_release(roots);
-	ulist_release(tmp);
+	ulist_release(&ctx->roots);
+	ulist_release(&ctx->refs);
 	return ret;
 }
 
