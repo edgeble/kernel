@@ -1528,13 +1528,13 @@ int btrfs_find_all_roots(struct btrfs_trans_handle *trans,
  * fs_info->commit_root_sem semaphore, so no need to worry about the root's last
  * snapshot field changing while updating or checking the cache.
  */
-static bool lookup_backref_shared_cache(struct btrfs_backref_shared_cache *cache,
+static bool lookup_backref_shared_cache(struct btrfs_backref_share_check_ctx *ctx,
 					struct btrfs_root *root,
 					u64 bytenr, int level, bool *is_shared)
 {
 	struct btrfs_backref_shared_cache_entry *entry;
 
-	if (!cache->use_cache)
+	if (!ctx->use_path_cache)
 		return false;
 
 	if (WARN_ON_ONCE(level >= BTRFS_MAX_LEVEL))
@@ -1548,7 +1548,7 @@ static bool lookup_backref_shared_cache(struct btrfs_backref_shared_cache *cache
 	 */
 	ASSERT(level >= 0);
 
-	entry = &cache->entries[level];
+	entry = &ctx->path_cache_entries[level];
 
 	/* Unused cache entry or being used for some other extent buffer. */
 	if (entry->bytenr != bytenr)
@@ -1581,8 +1581,8 @@ static bool lookup_backref_shared_cache(struct btrfs_backref_shared_cache *cache
 	 */
 	if (*is_shared) {
 		for (int i = 0; i < level; i++) {
-			cache->entries[i].is_shared = true;
-			cache->entries[i].gen = entry->gen;
+			ctx->path_cache_entries[i].is_shared = true;
+			ctx->path_cache_entries[i].gen = entry->gen;
 		}
 	}
 
@@ -1594,14 +1594,14 @@ static bool lookup_backref_shared_cache(struct btrfs_backref_shared_cache *cache
  * fs_info->commit_root_sem semaphore, so no need to worry about the root's last
  * snapshot field changing while updating or checking the cache.
  */
-static void store_backref_shared_cache(struct btrfs_backref_shared_cache *cache,
+static void store_backref_shared_cache(struct btrfs_backref_share_check_ctx *ctx,
 				       struct btrfs_root *root,
 				       u64 bytenr, int level, bool is_shared)
 {
 	struct btrfs_backref_shared_cache_entry *entry;
 	u64 gen;
 
-	if (!cache->use_cache)
+	if (!ctx->use_path_cache)
 		return;
 
 	if (WARN_ON_ONCE(level >= BTRFS_MAX_LEVEL))
@@ -1620,7 +1620,7 @@ static void store_backref_shared_cache(struct btrfs_backref_shared_cache *cache,
 	else
 		gen = btrfs_root_last_snapshot(&root->root_item);
 
-	entry = &cache->entries[level];
+	entry = &ctx->path_cache_entries[level];
 	entry->bytenr = bytenr;
 	entry->is_shared = is_shared;
 	entry->gen = gen;
@@ -1634,7 +1634,7 @@ static void store_backref_shared_cache(struct btrfs_backref_shared_cache *cache,
 	 */
 	if (is_shared) {
 		for (int i = 0; i < level; i++) {
-			entry = &cache->entries[i];
+			entry = &ctx->path_cache_entries[i];
 			entry->is_shared = is_shared;
 			entry->gen = gen;
 		}
@@ -1650,7 +1650,7 @@ static void store_backref_shared_cache(struct btrfs_backref_shared_cache *cache,
  *               not known.
  * @roots:       List of roots this extent is shared among.
  * @tmp:         Temporary list used for iteration.
- * @cache:       A backref lookup result cache.
+ * @ctx:         A backref sharedness check context.
  *
  * btrfs_is_data_extent_shared uses the backref walking code but will short
  * circuit as soon as it finds a root or inode that doesn't match the
@@ -1666,7 +1666,7 @@ static void store_backref_shared_cache(struct btrfs_backref_shared_cache *cache,
 int btrfs_is_data_extent_shared(struct btrfs_inode *inode, u64 bytenr,
 				u64 extent_gen,
 				struct ulist *roots, struct ulist *tmp,
-				struct btrfs_backref_shared_cache *cache)
+				struct btrfs_backref_share_check_ctx *ctx)
 {
 	struct btrfs_root *root = inode->root;
 	struct btrfs_fs_info *fs_info = root->fs_info;
@@ -1701,7 +1701,7 @@ int btrfs_is_data_extent_shared(struct btrfs_inode *inode, u64 bytenr,
 	/* -1 means we are in the bytenr of the data extent. */
 	level = -1;
 	ULIST_ITER_INIT(&uiter);
-	cache->use_cache = true;
+	ctx->use_path_cache = true;
 	while (1) {
 		bool is_shared;
 		bool cached;
@@ -1712,7 +1712,7 @@ int btrfs_is_data_extent_shared(struct btrfs_inode *inode, u64 bytenr,
 			/* this is the only condition under which we return 1 */
 			ret = 1;
 			if (level >= 0)
-				store_backref_shared_cache(cache, root, bytenr,
+				store_backref_shared_cache(ctx, root, bytenr,
 							   level, true);
 			break;
 		}
@@ -1747,17 +1747,17 @@ int btrfs_is_data_extent_shared(struct btrfs_inode *inode, u64 bytenr,
 		 * (which implies multiple paths).
 		 */
 		if (level == -1 && tmp->nnodes > 1)
-			cache->use_cache = false;
+			ctx->use_path_cache = false;
 
 		if (level >= 0)
-			store_backref_shared_cache(cache, root, bytenr,
+			store_backref_shared_cache(ctx, root, bytenr,
 						   level, false);
 		node = ulist_next(tmp, &uiter);
 		if (!node)
 			break;
 		bytenr = node->val;
 		level++;
-		cached = lookup_backref_shared_cache(cache, root, bytenr, level,
+		cached = lookup_backref_shared_cache(ctx, root, bytenr, level,
 						     &is_shared);
 		if (cached) {
 			ret = (is_shared ? 1 : 0);
