@@ -581,6 +581,7 @@ cleanup:
 
 	acpi_ds_terminate_control_method(obj_desc, next_walk_state);
 	acpi_ds_delete_walk_state(next_walk_state);
+	acpi_ds_pop_walk_state(thread);
 
 	return_ACPI_STATUS(status);
 }
