@@ -2007,6 +2007,11 @@
 			status = "okay";
 		};
 
+		serial@31d0000 {
+			current-speed = <115200>;
+			status = "okay";
+		};
+
 		hda@3510000 {
 			nvidia,model = "NVIDIA Jetson AGX Orin HDA";
 			status = "okay";
