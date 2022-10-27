@@ -10,6 +10,7 @@
 #include <linux/sort.h>
 #include <linux/btrfs.h>
 #include "async-thread.h"
+#include "messages.h"
 
 #define BTRFS_MAX_DATA_CHUNK_SIZE	(10ULL * SZ_1G)
 
@@ -354,6 +355,8 @@ struct btrfs_fs_devices {
 	 * nonrot flag set
 	 */
 	bool rotating;
+	/* Devices support TRIM/discard commands */
+	bool discardable;
 
 	struct btrfs_fs_info *fs_info;
 	/* sysfs kobjects */
@@ -395,6 +398,7 @@ typedef void (*btrfs_bio_end_io_t)(struct btrfs_bio *bbio);
  */
 struct btrfs_bio {
 	unsigned int mirror_num;
+	struct bvec_iter iter;
 
 	/* for direct I/O */
 	u64 file_offset;
@@ -403,7 +407,6 @@ struct btrfs_bio {
 	struct btrfs_device *device;
 	u8 *csum;
 	u8 csum_inline[BTRFS_BIO_INLINE_CSUM_SIZE];
-	struct bvec_iter iter;
 
 	/* End I/O information supplied to btrfs_bio_alloc */
 	btrfs_bio_end_io_t end_io;
@@ -601,6 +604,13 @@ static inline enum btrfs_map_op btrfs_op(struct bio *bio)
 	case REQ_OP_READ:
 		return BTRFS_MAP_READ;
 	}
+}
+
+static inline unsigned long btrfs_chunk_item_size(int num_stripes)
+{
+	ASSERT(num_stripes);
+	return sizeof(struct btrfs_chunk) +
+		sizeof(struct btrfs_stripe) * (num_stripes - 1);
 }
 
 void btrfs_get_bioc(struct btrfs_io_context *bioc);
