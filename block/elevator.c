@@ -132,11 +132,6 @@ static struct elevator_type *elevator_find(const char *name,
 	return NULL;
 }
 
-static void elevator_put(struct elevator_type *e)
-{
-	module_put(e->elevator_owner);
-}
-
 static struct elevator_type *elevator_get(struct request_queue *q,
 					  const char *name, bool try_loading)
 {
@@ -152,7 +147,7 @@ static struct elevator_type *elevator_get(struct request_queue *q,
 		e = elevator_find(name, q->required_elevator_features);
 	}
 
-	if (e && !try_module_get(e->elevator_owner))
+	if (e && !elevator_tryget(e))
 		e = NULL;
 
 	spin_unlock(&elv_list_lock);
@@ -170,6 +165,7 @@ struct elevator_queue *elevator_alloc(struct request_queue *q,
 	if (unlikely(!eq))
 		return NULL;
 
+	__elevator_get(e);
 	eq->type = e;
 	kobject_init(&eq->kobj, &elv_ktype);
 	mutex_init(&eq->sysfs_lock);
@@ -512,7 +508,7 @@ int elv_register_queue(struct request_queue *q, bool uevent)
 		if (uevent)
 			kobject_uevent(&e->kobj, KOBJ_ADD);
 
-		e->registered = 1;
+		set_bit(ELEVATOR_FLAG_REGISTERED, &e->flags);
 	}
 	return error;
 }
@@ -523,13 +519,9 @@ void elv_unregister_queue(struct request_queue *q)
 
 	lockdep_assert_held(&q->sysfs_lock);
 
-	if (e && e->registered) {
-		struct elevator_queue *e = q->elevator;
-
+	if (e && test_and_clear_bit(ELEVATOR_FLAG_REGISTERED, &e->flags)) {
 		kobject_uevent(&e->kobj, KOBJ_REMOVE);
 		kobject_del(&e->kobj);
-
-		e->registered = 0;
 	}
 }
 
@@ -663,7 +655,7 @@ static struct elevator_type *elevator_get_by_features(struct request_queue *q)
 		}
 	}
 
-	if (found && !try_module_get(found->elevator_owner))
+	if (found && !elevator_tryget(found))
 		found = NULL;
 
 	spin_unlock(&elv_list_lock);
@@ -713,8 +705,9 @@ void elevator_init_mq(struct request_queue *q)
 	if (err) {
 		pr_warn("\"%s\" elevator initialization failed, "
 			"falling back to \"none\"\n", e->elevator_name);
-		elevator_put(e);
 	}
+
+	elevator_put(e);
 }
 
 /*
@@ -743,10 +736,10 @@ int elevator_switch(struct request_queue *q, struct elevator_type *new_e)
 /*
  * Switch this queue to the given IO scheduler.
  */
-static int __elevator_change(struct request_queue *q, const char *name)
+static int elevator_change(struct request_queue *q, const char *elevator_name)
 {
-	char elevator_name[ELV_NAME_MAX];
 	struct elevator_type *e;
+	int ret;
 
 	/* Make sure queue is not in the middle of being removed */
 	if (!blk_queue_registered(q))
@@ -755,38 +748,36 @@ static int __elevator_change(struct request_queue *q, const char *name)
 	/*
 	 * Special case for mq, turn off scheduling
 	 */
-	if (!strncmp(name, "none", 4)) {
+	if (!strncmp(elevator_name, "none", 4)) {
 		if (!q->elevator)
 			return 0;
 		return elevator_switch(q, NULL);
 	}
 
-	strlcpy(elevator_name, name, sizeof(elevator_name));
-	e = elevator_get(q, strstrip(elevator_name), true);
+	if (q->elevator && elevator_match(q->elevator->type, elevator_name, 0))
+		return 0;
+
+	e = elevator_get(q, elevator_name, true);
 	if (!e)
 		return -EINVAL;
-
-	if (q->elevator &&
-	    elevator_match(q->elevator->type, elevator_name, 0)) {
-		elevator_put(e);
-		return 0;
-	}
-
-	return elevator_switch(q, e);
+	ret = elevator_switch(q, e);
+	elevator_put(e);
+	return ret;
 }
 
-ssize_t elv_iosched_store(struct request_queue *q, const char *name,
+ssize_t elv_iosched_store(struct request_queue *q, const char *buf,
 			  size_t count)
 {
+	char elevator_name[ELV_NAME_MAX];
 	int ret;
 
 	if (!elv_support_iosched(q))
 		return count;
 
-	ret = __elevator_change(q, name);
+	strlcpy(elevator_name, buf, sizeof(elevator_name));
+	ret = elevator_change(q, strstrip(elevator_name));
 	if (!ret)
 		return count;
-
 	return ret;
 }
 
