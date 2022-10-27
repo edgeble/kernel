@@ -7,6 +7,7 @@
 #define BTRFS_BACKREF_H
 
 #include <linux/btrfs.h>
+#include "messages.h"
 #include "ulist.h"
 #include "disk-io.h"
 #include "extent_io.h"
@@ -23,17 +24,62 @@ struct btrfs_backref_shared_cache_entry {
 	bool is_shared;
 };
 
-struct btrfs_backref_shared_cache {
+#define BTRFS_BACKREF_CTX_PREV_EXTENTS_SIZE 8
+
+struct btrfs_backref_share_check_ctx {
+	/* Ulists used during backref walking. */
+	struct ulist refs;
+	/*
+	 * The current leaf the caller of btrfs_is_data_extent_shared() is at.
+	 * Typically the caller (at the moment only fiemap) tries to determine
+	 * the sharedness of data extents point by file extent items from entire
+	 * leaves.
+	 */
+	u64 curr_leaf_bytenr;
+	/*
+	 * The previous leaf the caller was at in the previous call to
+	 * btrfs_is_data_extent_shared(). This may be the same as the current
+	 * leaf. On the first call it must be 0.
+	 */
+	u64 prev_leaf_bytenr;
 	/*
 	 * A path from a root to a leaf that has a file extent item pointing to
 	 * a given data extent should never exceed the maximum b+tree height.
 	 */
-	struct btrfs_backref_shared_cache_entry entries[BTRFS_MAX_LEVEL];
-	bool use_cache;
+	struct btrfs_backref_shared_cache_entry path_cache_entries[BTRFS_MAX_LEVEL];
+	bool use_path_cache;
+	/*
+	 * Cache the sharedness result for the last few extents we have found,
+	 * but only for extents for which we have multiple file extent items
+	 * that point to them.
+	 * It's very common to have several file extent items that point to the
+	 * same extent (bytenr) but with different offsets and lengths. This
+	 * typically happens for COW writes, partial writes into prealloc
+	 * extents, NOCOW writes after snapshoting a root, hole punching or
+	 * reflinking within the same file (less common perhaps).
+	 * So keep a small cache with the lookup results for the extent pointed
+	 * by the last few file extent items. This cache is checked, with a
+	 * linear scan, whenever btrfs_is_data_extent_shared() is called, so
+	 * it must be small so that it does not negatively affect performance in
+	 * case we don't have multiple file extent items that point to the same
+	 * data extent.
+	 */
+	struct {
+		u64 bytenr;
+		bool is_shared;
+	} prev_extents_cache[BTRFS_BACKREF_CTX_PREV_EXTENTS_SIZE];
+	/*
+	 * The slot in the prev_extents_cache array that will be used for
+	 * storing the sharedness result of a new data extent.
+	 */
+	int prev_extents_cache_slot;
 };
 
 typedef int (iterate_extent_inodes_t)(u64 inum, u64 offset, u64 root,
 		void *ctx);
+
+struct btrfs_backref_share_check_ctx *btrfs_alloc_backref_share_check_ctx(void);
+void btrfs_free_backref_share_ctx(struct btrfs_backref_share_check_ctx *ctx);
 
 int extent_from_logical(struct btrfs_fs_info *fs_info, u64 logical,
 			struct btrfs_path *path, struct btrfs_key *found_key,
@@ -77,10 +123,9 @@ int btrfs_find_one_extref(struct btrfs_root *root, u64 inode_objectid,
 			  u64 start_off, struct btrfs_path *path,
 			  struct btrfs_inode_extref **ret_extref,
 			  u64 *found_off);
-int btrfs_is_data_extent_shared(struct btrfs_root *root, u64 inum, u64 bytenr,
+int btrfs_is_data_extent_shared(struct btrfs_inode *inode, u64 bytenr,
 				u64 extent_gen,
-				struct ulist *roots, struct ulist *tmp,
-				struct btrfs_backref_shared_cache *cache);
+				struct btrfs_backref_share_check_ctx *ctx);
 
 int __init btrfs_prelim_ref_init(void);
 void __cold btrfs_prelim_ref_exit(void);
@@ -111,8 +156,7 @@ struct btrfs_backref_iter {
 	u32 end_ptr;
 };
 
-struct btrfs_backref_iter *btrfs_backref_iter_alloc(
-		struct btrfs_fs_info *fs_info, gfp_t gfp_flag);
+struct btrfs_backref_iter *btrfs_backref_iter_alloc(struct btrfs_fs_info *fs_info);
 
 static inline void btrfs_backref_iter_free(struct btrfs_backref_iter *iter)
 {
