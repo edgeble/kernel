@@ -106,10 +106,10 @@ EXTRA_CFLAGS += -DCONFIG_RTW_ANDROID=$(CONFIG_RTW_ANDROID)
 endif
 
 ########################## Debug ###########################
-CONFIG_RTW_DEBUG = y
-# default log level is _DRV_INFO_ = 4,
+CONFIG_RTW_DEBUG = n
+# default log level is _DRV_INFO_ = 0,
 # please refer to "How_to_set_driver_debug_log_level.doc" to set the available level.
-CONFIG_RTW_LOG_LEVEL = 4
+CONFIG_RTW_LOG_LEVEL = 0
 
 # enable /proc/net/rtlxxxx/ debug interfaces
 CONFIG_PROC_DEBUG = y
@@ -159,6 +159,7 @@ CONFIG_PLATFORM_ARM_SUNxI = n
 CONFIG_PLATFORM_RTK1319 = n
 CONFIG_PLATFORM_RTK16XXB = n
 CONFIG_PLATFORM_AML_S905 = n
+CONFIG_PLATFORM_ARM_RK3588 = y
 
 ########### CUSTOMER ################################
 
@@ -190,6 +191,8 @@ else
 endif
 
 ifeq ($(CONFIG_PLATFORM_RTL8198D), y)
+DRV_PATH = $(src)
+else ifeq ($(CONFIG_PLATFORM_ARM_RK3588), y)
 DRV_PATH = $(src)
 else
 DRV_PATH = $(TopDIR)
