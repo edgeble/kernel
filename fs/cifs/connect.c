@@ -1574,6 +1574,10 @@ cifs_put_tcp_session(struct TCP_Server_Info *server, int from_reconnect)
 	else
 		cancel_delayed_work_sync(&server->reconnect);
 
+	task = xchg(&server->tsk, NULL);
+	if (task)
+		send_sig(SIGKILL, task, 1);
+
 	spin_lock(&server->srv_lock);
 	server->tcpStatus = CifsExiting;
 	spin_unlock(&server->srv_lock);
@@ -1585,10 +1589,6 @@ cifs_put_tcp_session(struct TCP_Server_Info *server, int from_reconnect)
 	server->session_key.len = 0;
 	kfree(server->hostname);
 	server->hostname = NULL;
-
-	task = xchg(&server->tsk, NULL);
-	if (task)
-		send_sig(SIGKILL, task, 1);
 }
 
 struct TCP_Server_Info *
