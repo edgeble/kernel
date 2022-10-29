@@ -8,6 +8,7 @@
 #include <dt-bindings/input/linux-event-codes.h>
 #include <dt-bindings/pwm/pwm.h>
 #include "rk3399.dtsi"
+#include "rk3399-linux.dtsi"
 #include "rk3399-opp.dtsi"
 
 / {
@@ -341,7 +342,7 @@
 				regulator-name = "vcc_sdio";
 				regulator-always-on;
 				regulator-boot-on;
-				regulator-min-microvolt = <3000000>;
+				regulator-min-microvolt = <1800000>;
 				regulator-max-microvolt = <3000000>;
 				regulator-state-mem {
 					regulator-on-in-suspend;
@@ -661,14 +662,19 @@
 };
 
 &sdmmc {
+	clock-frequency = <150000000>;
+	clock-freq-min-max = <100000 150000000>;
+	no-sdio;
+	no-mmc;
 	bus-width = <4>;
 	cap-mmc-highspeed;
 	cap-sd-highspeed;
-	cd-gpios = <&gpio0 RK_PA7 GPIO_ACTIVE_LOW>;
 	disable-wp;
-	max-frequency = <150000000>;
+	sd-uhs-sdr104;
+	num-slots = <1>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&sdmmc_clk &sdmmc_cd &sdmmc_cmd &sdmmc_bus4>;
+	vqmmc-supply = <&vcc_sdio>;
 	status = "okay";
 };
 
