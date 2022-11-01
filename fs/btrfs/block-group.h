@@ -100,6 +100,12 @@ struct btrfs_block_group {
 	u64 global_root_id;
 
 	/*
+	 * The last committed used bytes of this block group, if the above @used
+	 * is still the same as @commit_used, we don't need to update block
+	 * group item of this block group.
+	 */
+	u64 commit_used;
+	/*
 	 * If the free space extent count exceeds this number, convert the block
 	 * group to bitmaps.
 	 */
@@ -251,16 +257,7 @@ static inline bool btrfs_is_block_group_data_only(
 }
 
 #ifdef CONFIG_BTRFS_DEBUG
-static inline int btrfs_should_fragment_free_space(
-		struct btrfs_block_group *block_group)
-{
-	struct btrfs_fs_info *fs_info = block_group->fs_info;
-
-	return (btrfs_test_opt(fs_info, FRAGMENT_METADATA) &&
-		block_group->flags & BTRFS_BLOCK_GROUP_METADATA) ||
-	       (btrfs_test_opt(fs_info, FRAGMENT_DATA) &&
-		block_group->flags &  BTRFS_BLOCK_GROUP_DATA);
-}
+int btrfs_should_fragment_free_space(struct btrfs_block_group *block_group);
 #endif
 
 struct btrfs_block_group *btrfs_lookup_first_block_group(
