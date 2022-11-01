@@ -891,6 +891,54 @@ static struct kfd_gpu_cache_info gc_10_3_6_cache_info[] = {
 	},
 };
 
+static struct kfd_gpu_cache_info dummy_cache_info[] = {
+	{
+		/* TCP L1 Cache per CU */
+		.cache_size = 16,
+		.cache_level = 1,
+		.flags = (CRAT_CACHE_FLAGS_ENABLED |
+				CRAT_CACHE_FLAGS_DATA_CACHE |
+				CRAT_CACHE_FLAGS_SIMD_CACHE),
+		.num_cu_shared = 1,
+	},
+	{
+		/* Scalar L1 Instruction Cache per SQC */
+		.cache_size = 32,
+		.cache_level = 1,
+		.flags = (CRAT_CACHE_FLAGS_ENABLED |
+				CRAT_CACHE_FLAGS_INST_CACHE |
+				CRAT_CACHE_FLAGS_SIMD_CACHE),
+		.num_cu_shared = 2,
+	},
+	{
+		/* Scalar L1 Data Cache per SQC */
+		.cache_size = 16,
+		.cache_level = 1,
+		.flags = (CRAT_CACHE_FLAGS_ENABLED |
+				CRAT_CACHE_FLAGS_DATA_CACHE |
+				CRAT_CACHE_FLAGS_SIMD_CACHE),
+		.num_cu_shared = 2,
+	},
+	{
+		/* GL1 Data Cache per SA */
+		.cache_size = 128,
+		.cache_level = 1,
+		.flags = (CRAT_CACHE_FLAGS_ENABLED |
+				CRAT_CACHE_FLAGS_DATA_CACHE |
+				CRAT_CACHE_FLAGS_SIMD_CACHE),
+		.num_cu_shared = 6,
+	},
+	{
+		/* L2 Data Cache per GPU (Total Tex Cache) */
+		.cache_size = 2048,
+		.cache_level = 2,
+		.flags = (CRAT_CACHE_FLAGS_ENABLED |
+				CRAT_CACHE_FLAGS_DATA_CACHE |
+				CRAT_CACHE_FLAGS_SIMD_CACHE),
+		.num_cu_shared = 6,
+	},
+};
+
 static void kfd_populated_cu_info_cpu(struct kfd_topology_device *dev,
 		struct crat_subtype_computeunit *cu)
 {
@@ -1083,7 +1131,6 @@ static int kfd_parse_subtype_cache(struct crat_subtype_cache *cache,
 			if (cache->flags & CRAT_CACHE_FLAGS_SIMD_CACHE)
 				props->cache_type |= HSA_CACHE_TYPE_HSACU;
 
-			dev->cache_count++;
 			dev->node_props.caches_count++;
 			list_add_tail(&props->list, &dev->cache_props);
 
@@ -1630,7 +1677,10 @@ static int kfd_fill_gpu_cache_info(struct kfd_dev *kdev,
 				kfd_fill_gpu_cache_info_from_gfx_config(kdev, pcache_info);
 			break;
 		default:
-			return -EINVAL;
+			pcache_info = dummy_cache_info;
+			num_of_cache_types = ARRAY_SIZE(dummy_cache_info);
+			pr_warn("dummy cache info is used temporarily and real cache info need update later.\n");
+			break;
 		}
 	}
 
@@ -2063,8 +2113,8 @@ static void kfd_find_numa_node_in_srat(struct kfd_dev *kdev)
 	struct acpi_table_header *table_header = NULL;
 	struct acpi_subtable_header *sub_header = NULL;
 	unsigned long table_end, subtable_len;
-	u32 pci_id = pci_domain_nr(kdev->pdev->bus) << 16 |
-			pci_dev_id(kdev->pdev);
+	u32 pci_id = pci_domain_nr(kdev->adev->pdev->bus) << 16 |
+			pci_dev_id(kdev->adev->pdev);
 	u32 bdf;
 	acpi_status status;
 	struct acpi_srat_cpu_affinity *cpu;
@@ -2139,7 +2189,7 @@ static void kfd_find_numa_node_in_srat(struct kfd_dev *kdev)
 		numa_node = 0;
 
 	if (numa_node != NUMA_NO_NODE)
-		set_dev_node(&kdev->pdev->dev, numa_node);
+		set_dev_node(&kdev->adev->pdev->dev, numa_node);
 }
 #endif
 
@@ -2200,14 +2250,14 @@ static int kfd_fill_gpu_direct_io_link_to_cpu(int *avail_size,
 	sub_type_hdr->proximity_domain_from = proximity_domain;
 
 #ifdef CONFIG_ACPI_NUMA
-	if (kdev->pdev->dev.numa_node == NUMA_NO_NODE)
+	if (kdev->adev->pdev->dev.numa_node == NUMA_NO_NODE)
 		kfd_find_numa_node_in_srat(kdev);
 #endif
 #ifdef CONFIG_NUMA
-	if (kdev->pdev->dev.numa_node == NUMA_NO_NODE)
+	if (kdev->adev->pdev->dev.numa_node == NUMA_NO_NODE)
 		sub_type_hdr->proximity_domain_to = 0;
 	else
-		sub_type_hdr->proximity_domain_to = kdev->pdev->dev.numa_node;
+		sub_type_hdr->proximity_domain_to = kdev->adev->pdev->dev.numa_node;
 #else
 	sub_type_hdr->proximity_domain_to = 0;
 #endif

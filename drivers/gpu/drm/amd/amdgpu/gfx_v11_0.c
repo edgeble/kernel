@@ -1626,7 +1626,8 @@ static void gfx_v11_0_constants_init(struct amdgpu_device *adev)
 	u32 tmp;
 	int i;
 
-	WREG32_FIELD15_PREREG(GC, 0, GRBM_CNTL, READ_TIMEOUT, 0xff);
+	if (!amdgpu_sriov_vf(adev))
+		WREG32_FIELD15_PREREG(GC, 0, GRBM_CNTL, READ_TIMEOUT, 0xff);
 
 	gfx_v11_0_setup_rb(adev);
 	gfx_v11_0_get_cu_info(adev, &adev->gfx.cu_info);
@@ -4673,6 +4674,26 @@ static int gfx_v11_0_early_init(void *handle)
 	return 0;
 }
 
+static int gfx_v11_0_ras_late_init(void *handle)
+{
+	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
+	struct ras_common_if *gfx_common_if;
+	int ret;
+
+	gfx_common_if = kzalloc(sizeof(struct ras_common_if), GFP_KERNEL);
+	if (!gfx_common_if)
+		return -ENOMEM;
+
+	gfx_common_if->block = AMDGPU_RAS_BLOCK__GFX;
+
+	ret = amdgpu_ras_feature_enable(adev, gfx_common_if, true);
+	if (ret)
+		dev_err(adev->dev, "Failed to enable gfx11 ras feature\n");
+
+	kfree(gfx_common_if);
+	return ret;
+}
+
 static int gfx_v11_0_late_init(void *handle)
 {
 	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
@@ -4685,6 +4706,12 @@ static int gfx_v11_0_late_init(void *handle)
 	r = amdgpu_irq_get(adev, &adev->gfx.priv_inst_irq, 0);
 	if (r)
 		return r;
+
+	if (adev->ip_versions[GC_HWIP][0] == IP_VERSION(11, 0, 3)) {
+		r = gfx_v11_0_ras_late_init(handle);
+		if (r)
+			return r;
+	}
 
 	return 0;
 }
@@ -6060,6 +6087,7 @@ static const struct amdgpu_ring_funcs gfx_v11_0_ring_funcs_gfx = {
 	.align_mask = 0xff,
 	.nop = PACKET3(PACKET3_NOP, 0x3FFF),
 	.support_64bit_ptrs = true,
+	.secure_submission_supported = true,
 	.vmhub = AMDGPU_GFXHUB_0,
 	.get_rptr = gfx_v11_0_ring_get_rptr_gfx,
 	.get_wptr = gfx_v11_0_ring_get_wptr_gfx,
