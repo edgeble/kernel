@@ -460,6 +460,34 @@
 		status = "disabled";
 	};
 
+	dsi: dsi@ffb30000 {
+		compatible = "rockchip,rv1126-mipi-dsi";
+		reg = <0xffb30000 0x500>;
+		interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&cru PCLK_DSIHOST>, <&dsi_dphy>;
+		clock-names = "pclk", "hs_clk";
+		resets = <&cru SRST_DSIHOST_P>;
+		reset-names = "apb";
+		phys = <&dsi_dphy>;
+		phy-names = "dphy";
+		rockchip,grf = <&grf>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		power-domains = <&power RV1126_PD_VO>;
+		status = "disabled";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port {
+				dsi_in_vop: endpoint {
+					remote-endpoint = <&vop_out_dsi>;
+				};
+			};
+		};
+	};
+
 	gmac_clkin_m0: external-gmac-clockm0 {
 		compatible = "fixed-clock";
 		clock-frequency = <125000000>;
