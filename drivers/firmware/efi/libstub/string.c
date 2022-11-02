@@ -11,7 +11,37 @@
 #include <linux/types.h>
 #include <linux/string.h>
 
-#ifndef __HAVE_ARCH_STRSTR
+#ifndef EFI_HAVE_STRLEN
+/**
+ * strlen - Find the length of a string
+ * @s: The string to be sized
+ */
+size_t strlen(const char *s)
+{
+	const char *sc;
+
+	for (sc = s; *sc != '\0'; ++sc)
+		/* nothing */;
+	return sc - s;
+}
+#endif
+
+#ifndef EFI_HAVE_STRNLEN
+/**
+ * strnlen - Find the length of a length-limited string
+ * @s: The string to be sized
+ * @count: The maximum number of bytes to search
+ */
+size_t strnlen(const char *s, size_t count)
+{
+	const char *sc;
+
+	for (sc = s; count-- && *sc != '\0'; ++sc)
+		/* nothing */;
+	return sc - s;
+}
+#endif
+
 /**
  * strstr - Find the first substring in a %NUL terminated string
  * @s1: The string to be searched
@@ -33,9 +63,7 @@ char *strstr(const char *s1, const char *s2)
 	}
 	return NULL;
 }
-#endif
 
-#ifndef __HAVE_ARCH_STRNCMP
 /**
  * strncmp - Compare two length-limited strings
  * @cs: One string
@@ -57,7 +85,6 @@ int strncmp(const char *cs, const char *ct, size_t count)
 	}
 	return 0;
 }
-#endif
 
 /* Works only for digits and letters, but small and fast */
 #define TOLOWER(x) ((x) | 0x20)

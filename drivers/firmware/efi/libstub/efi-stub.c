@@ -35,15 +35,6 @@
  * as well to minimize the code churn.
  */
 #define EFI_RT_VIRTUAL_BASE	SZ_512M
-#define EFI_RT_VIRTUAL_SIZE	SZ_512M
-
-#ifdef CONFIG_ARM64
-# define EFI_RT_VIRTUAL_LIMIT	DEFAULT_MAP_WINDOW_64
-#elif defined(CONFIG_RISCV) || defined(CONFIG_LOONGARCH)
-# define EFI_RT_VIRTUAL_LIMIT	TASK_SIZE_MIN
-#else /* Only if TASK_SIZE is a constant */
-# define EFI_RT_VIRTUAL_LIMIT	TASK_SIZE
-#endif
 
 /*
  * Some architectures map the EFI regions into the kernel's linear map using a
@@ -135,7 +126,6 @@ efi_status_t __efiapi efi_pe_entry(efi_handle_t handle,
 	unsigned long reserve_addr = 0;
 	unsigned long reserve_size = 0;
 	struct screen_info *si;
-	efi_properties_table_t *prop_tbl;
 
 	efi_system_table = sys_table_arg;
 
@@ -214,41 +204,9 @@ efi_status_t __efiapi efi_pe_entry(efi_handle_t handle,
 
 	efi_random_get_seed();
 
-	/*
-	 * If the NX PE data feature is enabled in the properties table, we
-	 * should take care not to create a virtual mapping that changes the
-	 * relative placement of runtime services code and data regions, as
-	 * they may belong to the same PE/COFF executable image in memory.
-	 * The easiest way to achieve that is to simply use a 1:1 mapping.
-	 */
-	prop_tbl = get_efi_config_table(EFI_PROPERTIES_TABLE_GUID);
-	flat_va_mapping |= prop_tbl &&
-			   (prop_tbl->memory_protection_attribute &
-			   EFI_PROPERTIES_RUNTIME_MEMORY_PROTECTION_NON_EXECUTABLE_PE_DATA);
-
 	/* force efi_novamap if SetVirtualAddressMap() is unsupported */
 	efi_novamap |= !(get_supported_rt_services() &
 			 EFI_RT_SUPPORTED_SET_VIRTUAL_ADDRESS_MAP);
-
-	/* hibernation expects the runtime regions to stay in the same place */
-	if (!IS_ENABLED(CONFIG_HIBERNATION) && !efi_nokaslr && !flat_va_mapping) {
-		/*
-		 * Randomize the base of the UEFI runtime services region.
-		 * Preserve the 2 MB alignment of the region by taking a
-		 * shift of 21 bit positions into account when scaling
-		 * the headroom value using a 32-bit random value.
-		 */
-		static const u64 headroom = EFI_RT_VIRTUAL_LIMIT -
-					    EFI_RT_VIRTUAL_BASE -
-					    EFI_RT_VIRTUAL_SIZE;
-		u32 rnd;
-
-		status = efi_get_random_bytes(sizeof(rnd), (u8 *)&rnd);
-		if (status == EFI_SUCCESS) {
-			virtmap_base = EFI_RT_VIRTUAL_BASE +
-				       (((headroom >> 21) * rnd) >> (32 - 21));
-		}
-	}
 
 	install_memreserve_table();
 
