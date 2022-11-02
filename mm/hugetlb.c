@@ -7317,15 +7317,15 @@ void putback_active_hugepage(struct page *page)
 	put_page(page);
 }
 
-void move_hugetlb_state(struct folio *old_folio, struct folio *new_folio, int reason)
+void move_hugetlb_state(struct page *oldpage, struct page *newpage, int reason)
 {
-	struct hstate *h = folio_hstate(old_folio);
+	struct hstate *h = page_hstate(oldpage);
 
-	hugetlb_cgroup_migrate(old_folio, new_folio);
-	set_page_owner_migrate_reason(&new_folio->page, reason);
+	hugetlb_cgroup_migrate(page_folio(oldpage), page_folio(newpage));
+	set_page_owner_migrate_reason(newpage, reason);
 
 	/*
-	 * transfer temporary state of the new hugetlb folio. This is
+	 * transfer temporary state of the new huge page. This is
 	 * reverse to other transitions because the newpage is going to
 	 * be final while the old one will be freed so it takes over
 	 * the temporary status.
@@ -7334,14 +7334,12 @@ void move_hugetlb_state(struct folio *old_folio, struct folio *new_folio, int re
 	 * here as well otherwise the global surplus count will not match
 	 * the per-node's.
 	 */
-	if (folio_test_hugetlb_temporary(new_folio)) {
-		int old_nid = folio_nid(old_folio);
-		int new_nid = folio_nid(new_folio);
+	if (HPageTemporary(newpage)) {
+		int old_nid = page_to_nid(oldpage);
+		int new_nid = page_to_nid(newpage);
 
-
-		folio_set_hugetlb_temporary(old_folio);
-		folio_clear_hugetlb_temporary(new_folio);
-
+		SetHPageTemporary(oldpage);
+		ClearHPageTemporary(newpage);
 
 		/*
 		 * There is no need to transfer the per-node surplus state
