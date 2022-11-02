@@ -316,6 +316,22 @@
 		};
 	};
 
+	dsi_dphy: dphy@ff4d0000 {
+		compatible = "rockchip,rv1126-mipi-dphy", "rockchip,rk1808-mipi-dphy";
+		reg = <0xff4d0000 0x500>;
+		assigned-clocks = <&pmucru CLK_MIPIDSIPHY_REF>;
+		assigned-clock-rates = <24000000>;
+		clocks = <&pmucru CLK_MIPIDSIPHY_REF>, <&cru PCLK_DSIPHY>;
+		clock-names = "ref", "pclk";
+		clock-output-names = "mipi_dphy_pll";
+		#clock-cells = <0>;
+		resets = <&cru SRST_DSIPHY_P>;
+		reset-names = "apb";
+		#phy-cells = <0>;
+		rockchip,grf = <&grf>;
+		status = "disabled";
+	};
+
 	uart0: serial@ff560000 {
 		compatible = "rockchip,rv1126-uart", "snps,dw-apb-uart";
 		reg = <0xff560000 0x100>;
