@@ -17,6 +17,14 @@
 		stdout-path = "serial2:1500000n8";
 	};
 
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pwm2 0 25000 0>;
+		enable-gpios = <&gpio2 RK_PD6 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&backlight_en>;
+	};
+
 	vcc5v0_host: vcc5v0-host-regulator {
 		compatible = "regulator-fixed";
 		enable-active-low;
@@ -28,14 +36,52 @@
 		regulator-boot-on;
 		vin-supply = <&vcc5v0_sys>;
 	};
+
+	vcc_lcd_mipi: vcc-lcd-mipi-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_lcd_mipi";
+		gpio = <&gpio3 RK_PB0 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-names = "default";
+		pinctrl-0 = <&vcc_lcd_mipi_en>;
+		regulator-boot-on;
+	};
 };
 
-&pinctrl {
-	usb {
-		host_vbus_drv: host-vbus-drv {
-			rockchip,pins = <2 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
+&dsi {
+	status = "okay";
+	clock-master;
+
+	ports {
+		mipi_out: port@1 {
+			reg = <1>;
+
+			mipi_out_panel: endpoint {
+				remote-endpoint = <&mipi_in_panel>;
+			};
 		};
 	};
+
+	panel@0 {
+		compatible = "chongzhou,cz101b4001", "jadard,jd9365da-h3";
+		reg = <0>;
+		vdd-supply = <&vcc_lcd_mipi>;
+		vccio-supply = <&vcc_lcd_mipi>;
+		reset-gpios = <&gpio3 RK_PB3 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcd_panel_reset>;
+		backlight = <&backlight>;
+
+		port {
+			mipi_in_panel: endpoint {
+				remote-endpoint = <&mipi_out_panel>;
+			};
+		};
+	};
+};
+
+&dsi_dphy {
+	status = "okay";
 };
 
 &gmac {
@@ -76,6 +122,30 @@
 			rockchip,pins = <0 RK_PB6 RK_FUNC_GPIO &pcfg_pull_down>;
 		};
 	};
+
+	lcd {
+		backlight_en: backlight-en {
+			rockchip,pins = <2 RK_PD6 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+
+		lcd_panel_reset: lcd-panel-reset {
+			rockchip,pins = <3 RK_PB3 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+
+		vcc_lcd_mipi_en: vcc-lcd-mipi-en {
+			rockchip,pins = <3 RK_PB0 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	usb {
+		host_vbus_drv: host-vbus-drv {
+			rockchip,pins = <2 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+};
+
+&pwm2 {
+	status = "okay";
 };
 
 &sdmmc {
@@ -127,5 +197,13 @@
 };
 
 &usb_host0_ohci {
+	status = "okay";
+};
+
+&vop {
+	status = "okay";
+};
+
+&vop_mmu {
 	status = "okay";
 };
