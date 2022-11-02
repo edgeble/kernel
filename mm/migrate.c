@@ -60,6 +60,7 @@
 
 int isolate_movable_page(struct page *page, isolate_mode_t mode)
 {
+	struct folio *folio = page_folio(page);
 	const struct movable_operations *mops;
 
 	/*
@@ -71,16 +72,29 @@ int isolate_movable_page(struct page *page, isolate_mode_t mode)
 	 * the put_page() at the end of this block will take care of
 	 * release this page, thus avoiding a nasty leakage.
 	 */
-	if (unlikely(!get_page_unless_zero(page)))
+	if (unlikely(!folio_try_get(folio)))
 		goto out;
 
+	/* Recheck the page is still part of the folio we just got */
+	if (unlikely(page_folio(page) != folio))
+		goto out_put;
+
+	if (unlikely(folio_test_slab(folio)))
+		goto out_put;
+	/* Pairs with smp_wmb() in slab freeing, e.g. SLUB's __free_slab() */
+	smp_rmb();
 	/*
-	 * Check PageMovable before holding a PG_lock because page's owner
-	 * assumes anybody doesn't touch PG_lock of newly allocated page
-	 * so unconditionally grabbing the lock ruins page's owner side.
+	 * Check movable flag before taking the folio lock because
+	 * we use non-atomic bitops on newly allocated page flags so
+	 * unconditionally grabbing the lock ruins page's owner side.
 	 */
-	if (unlikely(!__PageMovable(page)))
-		goto out_putpage;
+	if (unlikely(!__folio_test_movable(folio)))
+		goto out_put;
+	/* Pairs with smp_wmb() in slab allocation, e.g. SLUB's alloc_slab_page() */
+	smp_rmb();
+	if (unlikely(folio_test_slab(folio)))
+		goto out_put;
+
 	/*
 	 * As movable pages are not isolated from LRU lists, concurrent
 	 * compaction threads can race against page migration functions
@@ -92,8 +106,8 @@ int isolate_movable_page(struct page *page, isolate_mode_t mode)
 	 * lets be sure we have the page lock
 	 * before proceeding with the movable page isolation steps.
 	 */
-	if (unlikely(!trylock_page(page)))
-		goto out_putpage;
+	if (unlikely(!folio_trylock(folio)))
+		goto out_put;
 
 	if (!PageMovable(page) || PageIsolated(page))
 		goto out_no_isolated;
@@ -107,14 +121,14 @@ int isolate_movable_page(struct page *page, isolate_mode_t mode)
 	/* Driver shouldn't use PG_isolated bit of page->flags */
 	WARN_ON_ONCE(PageIsolated(page));
 	SetPageIsolated(page);
-	unlock_page(page);
+	folio_unlock(folio);
 
 	return 0;
 
 out_no_isolated:
-	unlock_page(page);
-out_putpage:
-	put_page(page);
+	folio_unlock(folio);
+out_put:
+	folio_put(folio);
 out:
 	return -EBUSY;
 }
