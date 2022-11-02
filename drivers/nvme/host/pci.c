@@ -1777,11 +1777,6 @@ static int nvme_pci_alloc_admin_tag_set(struct nvme_dev *dev)
 		dev->ctrl.admin_q = NULL;
 		return -ENOMEM;
 	}
-	if (!blk_get_queue(dev->ctrl.admin_q)) {
-		nvme_dev_remove_admin(dev);
-		dev->ctrl.admin_q = NULL;
-		return -ENODEV;
-	}
 	return 0;
 }
 

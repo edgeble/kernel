@@ -1349,12 +1349,7 @@ static inline int blk_rq_aligned(struct request_queue *q, unsigned long addr,
 /* assumes size > 256 */
 static inline unsigned int blksize_bits(unsigned int size)
 {
-	unsigned int bits = 8;
-	do {
-		bits++;
-		size >>= 1;
-	} while (size > 256);
-	return bits;
+	return order_base_2(size >> SECTOR_SHIFT) + SECTOR_SHIFT;
 }
 
 static inline unsigned int block_size(struct block_device *bdev)
@@ -1458,7 +1453,6 @@ unsigned long bdev_start_io_acct(struct block_device *bdev,
 void bdev_end_io_acct(struct block_device *bdev, enum req_op op,
 		unsigned long start_time);
 
-void bio_start_io_acct_time(struct bio *bio, unsigned long start_time);
 unsigned long bio_start_io_acct(struct bio *bio);
 void bio_end_io_acct_remapped(struct bio *bio, unsigned long start_time,
 		struct block_device *orig_bdev);
