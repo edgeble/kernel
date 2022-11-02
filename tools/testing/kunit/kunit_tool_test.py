@@ -80,6 +80,9 @@ class KconfigTest(unittest.TestCase):
 		self.assertEqual(actual_kconfig, expected_kconfig)
 
 class KUnitParserTest(unittest.TestCase):
+	def setUp(self):
+		self.print_mock = mock.patch('kunit_printer.Printer.print').start()
+		self.addCleanup(mock.patch.stopall)
 
 	def assertContains(self, needle: str, haystack: kunit_parser.LineStream):
 		# Clone the iterator so we can print the contents on failure.
@@ -309,6 +312,28 @@ class KUnitParserTest(unittest.TestCase):
 				result.status)
 			self.assertEqual('kunit-resource-test', result.subtests[0].name)
 
+	def test_summarize_failures(self):
+		output = """
+		KTAP version 1
+		1..2
+			# Subtest: all_failed_suite
+			1..2
+			not ok 1 - test1
+			not ok 2 - test2
+		not ok 1 - all_failed_suite
+			# Subtest: some_failed_suite
+			1..2
+			ok 1 - test1
+			not ok 2 - test2
+		not ok 1 - some_failed_suite
+		"""
+		result = kunit_parser.parse_run_tests(output.splitlines())
+		self.assertEqual(kunit_parser.TestStatus.FAILURE, result.status)
+
+		self.assertEqual(kunit_parser._summarize_failed_tests(result),
+			'Failures: all_failed_suite, some_failed_suite.test2')
+
+
 def line_stream_from_strs(strs: Iterable[str]) -> kunit_parser.LineStream:
 	return kunit_parser.LineStream(enumerate(strs, start=1))
 
@@ -485,6 +510,9 @@ class LinuxSourceTreeTest(unittest.TestCase):
 
 
 class KUnitJsonTest(unittest.TestCase):
+	def setUp(self):
+		self.print_mock = mock.patch('kunit_printer.Printer.print').start()
+		self.addCleanup(mock.patch.stopall)
 
 	def _json_for(self, log_file):
 		with open(test_data_path(log_file)) as file:
