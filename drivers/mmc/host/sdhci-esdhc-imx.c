@@ -306,7 +306,8 @@ static struct esdhc_soc_data usdhc_imx7ulp_data = {
 			| ESDHC_FLAG_STATE_LOST_IN_LPMODE,
 };
 static struct esdhc_soc_data usdhc_imxrt1050_data = {
-	.flags = ESDHC_FLAG_USDHC | ESDHC_FLAG_HS200 | ESDHC_FLAG_ERR004536,
+	.flags = ESDHC_FLAG_USDHC | ESDHC_FLAG_STD_TUNING
+			| ESDHC_FLAG_HAVE_CAP1 | ESDHC_FLAG_HS200,
 };
 
 static struct esdhc_soc_data usdhc_imx8qxp_data = {
@@ -1453,7 +1454,7 @@ static void sdhci_esdhc_imx_hwinit(struct sdhci_host *host)
 
 		/*
 		 * On i.MX8MM, we are running Dual Linux OS, with 1st Linux using SD Card
-		 * as rootfs storage, 2nd Linux using eMMC as rootfs storage. We let the
+		 * as rootfs storage, 2nd Linux using eMMC as rootfs storage. We let
 		 * the 1st linux configure power/clock for the 2nd Linux.
 		 *
 		 * When the 2nd Linux is booting into rootfs stage, we let the 1st Linux
