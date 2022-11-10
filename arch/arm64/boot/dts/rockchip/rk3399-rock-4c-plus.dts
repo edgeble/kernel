@@ -13,6 +13,7 @@
 #include "rk3399.dtsi"
 #include "rk3399-linux.dtsi"
 #include "rk3399-opp.dtsi"
+#include "rk3399-rock-4c-plus-display.dtsi"
 
 / {
 	model = "Radxa ROCK 4C+";
