@@ -19,7 +19,7 @@
 #include "rk3588.dtsi"
 #include "rk3588-rk806-single.dtsi"
 #include "rk3588-linux.dtsi"
-#include "rk3588-rock-5b-radxa-10p1inch-display.dtsi"
+#include "rk3588-rock-5b-display.dtsi"
 #include "rk3588-rock-5b-imx415.dtsi"
 
 / {
