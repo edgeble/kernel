@@ -67,6 +67,26 @@
     connect = <&vopl_out_dsi>;
 };
 
+&i2c1 {
+	status = "disabled";
+
+	clock-frequency = <400000>;
+
+	gt9xx: gt9xx@14 {
+		status = "disabled";
+		compatible = "goodix,gt9xx";
+		reg = <0x14>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&gt9xx_gpio>;
+		touch-gpio = <&gpio1 RK_PD0 IRQ_TYPE_LEVEL_HIGH>;
+		reset-gpio = <&gpio1 RK_PA0 GPIO_ACTIVE_HIGH>;
+		max-x = <800>;
+		max-y = <1280>;
+		tp-size = <9112>;
+		tp-supply = <&vcc_mipi>;
+	};
+};
+
 &pinctrl {
 
 	lcd-panel {
@@ -78,6 +98,14 @@
 
 	touch {
 		touch_gpio: touch-gpio {
+		    rockchip,pins =
+			<1 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PD0 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	gt9xx {
+		gt9xx_gpio: gt9xx-gpio {
 		    rockchip,pins =
 			<1 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>,
 			<1 RK_PD0 RK_FUNC_GPIO &pcfg_pull_none>;
