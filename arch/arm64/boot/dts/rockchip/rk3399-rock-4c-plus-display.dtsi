@@ -85,6 +85,18 @@
 		tp-size = <9112>;
 		tp-supply = <&vcc_mipi>;
 	};
+
+	focaltech: focaltech@38 {
+		status = "disabled";
+		compatible = "focaltech,fts";
+		reg = <0x38>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&focaltech_gpio>;
+		focaltech,irq-gpio = <&gpio1 RK_PD0 IRQ_TYPE_LEVEL_LOW>;
+		focaltech,reset-gpio = <&gpio1 RK_PA0 GPIO_ACTIVE_HIGH>;
+		focaltech,display-coords = <0 0 799 1279>;
+		tp-supply = <&vcc_mipi>;
+	};
 };
 
 &pinctrl {
@@ -106,6 +118,14 @@
 
 	gt9xx {
 		gt9xx_gpio: gt9xx-gpio {
+		    rockchip,pins =
+			<1 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>,
+			<1 RK_PD0 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	focaltech {
+		focaltech_gpio: focaltech-gpio {
 		    rockchip,pins =
 			<1 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>,
 			<1 RK_PD0 RK_FUNC_GPIO &pcfg_pull_none>;
