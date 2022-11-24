@@ -106,6 +106,15 @@
 		rockchip,jack-det;
 	};
 
+	rk809_sound: rk809-sound {
+		compatible = "rockchip,multicodecs-card";
+		rockchip,card-name = "rockchip-rk809";
+		rockchip,format = "i2s";
+		rockchip,mclk-fs = <256>;
+		rockchip,cpu = <&i2s0>;
+		rockchip,codec = <&rk809_codec>;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 		status = "okay";
@@ -223,6 +232,13 @@
 	non-removable;
 	mmc-hs400-enhanced-strobe;
 	status = "okay";
+};
+
+&i2s0 {
+	status = "okay";
+	#sound-dai-cells = <0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2s0_8ch_bus>;
 };
 
 &i2s1 {
@@ -504,6 +520,8 @@
 			clock-names = "mclk";
 			pinctrl-names = "default";
 			pinctrl-0 = <&i2s_8ch_mclk>;
+			assigned-clocks = <&cru SCLK_I2SOUT_SRC>;
+			assigned-clock-parents = <&cru SCLK_I2S0_8CH>;
 			hp-volume = <20>;
 			spk-volume = <3>;
 			status = "okay";
@@ -888,6 +906,21 @@
 		sdmmc_cmd: sdmmc-cmd {
 			rockchip,pins =
 				<4 RK_PB5 1 &pcfg_pull_up_8ma>;
+		};
+	};
+
+	i2s0 {
+		i2s0_8ch_bus: i2s0-8ch-bus {
+			rockchip,pins =
+				<3 RK_PD0 1 &pcfg_pull_none>,
+				<3 RK_PD2 1 &pcfg_pull_none>,
+				<3 RK_PD3 1 &pcfg_pull_none>,
+				<3 RK_PD7 1 &pcfg_pull_none>;
+		};
+
+		i2s_8ch_mclk: i2s-8ch-mclk {
+			rockchip,pins =
+				<4 RK_PA0 1 &pcfg_pull_none>;
 		};
 	};
 
