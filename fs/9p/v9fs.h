@@ -51,6 +51,8 @@ enum p9_session_flags {
 enum p9_cache_modes {
 	CACHE_NONE,
 	CACHE_MMAP,
+	CACHE_READAHEAD,
+	CACHE_WRITEBACK,
 	CACHE_LOOSE,
 	CACHE_FSCACHE,
 	nr__p9_cache_modes
@@ -155,6 +157,7 @@ extern int v9fs_vfs_rename(struct user_namespace *mnt_userns,
 			   struct inode *old_dir, struct dentry *old_dentry,
 			   struct inode *new_dir, struct dentry *new_dentry,
 			   unsigned int flags);
+extern int v9fs_flush_inode_writeback(struct inode *inode);
 extern struct inode *v9fs_inode_from_fid(struct v9fs_session_info *v9ses,
 					 struct p9_fid *fid,
 					 struct super_block *sb, int new);

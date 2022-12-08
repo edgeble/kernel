@@ -214,6 +214,9 @@ int v9fs_dir_release(struct inode *inode, struct file *filp)
 	p9_debug(P9_DEBUG_VFS, "inode: %p filp: %p fid: %d\n",
 		 inode, filp, fid ? fid->fid : -1);
 	if (fid) {
+		if ((fid->qid.type == P9_QTFILE) && (filp->f_mode & FMODE_WRITE))
+			v9fs_flush_inode_writeback(inode);
+
 		spin_lock(&inode->i_lock);
 		hlist_del(&fid->ilist);
 		spin_unlock(&inode->i_lock);
