@@ -106,6 +106,16 @@
 		rockchip,jack-det;
 	};
 
+	dp0_sound: dp0-sound {
+		status = "okay";
+		compatible = "rockchip,hdmi";
+		rockchip,card-name = "rockchip,dp0";
+		rockchip,mclk-fs = <512>;
+		rockchip,cpu = <&spdif>;
+		rockchip,codec = <&cdn_dp 1>;
+		rockchip,jack-det;
+	};
+
 	vcc3v3_dp: vcc3v3-dp {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc3v3_dp";
@@ -307,7 +317,13 @@
 
 &i2s2 {
 	status = "okay";
+	dmas = <&dmac_bus 4>;
+	dma-names = "tx";
 	#sound-dai-cells = <0>;
+};
+
+&spdif {
+	status = "okay";
 };
 
 &i2c0 {
