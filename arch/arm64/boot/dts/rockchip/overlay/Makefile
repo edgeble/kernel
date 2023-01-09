@@ -36,6 +36,7 @@ dtbo-$(CONFIG_ARCH_ROCKCHIP) += \
 	rock-4c-plus-radxa-display-10hd.dtbo \
 	rock-4c-plus-radxa-display-10fhd.dtbo \
 	rock-5ab-camera-imx415.dtbo \
+	rock-5a-radxa-camera-4k.dtbo \
 	rock-5b-hdmi1-8k.dtbo \
 	rock-5b-hdmi2-8k.dtbo \
 	rock-5b-pd-max-voltage-12v.dtbo \
