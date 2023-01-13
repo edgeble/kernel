@@ -662,6 +662,10 @@
 	status = "okay";
 };
 
+&vepu {
+	status = "okay";
+};
+
 /* vp0 & vp1 splice for 8K output */
 &vp0 {
 	rockchip,plane-mask = <(1 << ROCKCHIP_VOP2_CLUSTER0 | 1 << ROCKCHIP_VOP2_ESMART0)>;
