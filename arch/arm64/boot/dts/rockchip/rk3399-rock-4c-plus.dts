@@ -18,6 +18,13 @@
 	model = "Radxa ROCK 4C+";
 	compatible = "radxa,rock-4c-plus", "rockchip,rk3399";
 
+	fan0: pwm-fan {
+		compatible = "pwm-fan";
+		#cooling-cells = <2>;
+		cooling-levels = <0 64 128 192 255>;
+		pwms = <&pwm3 0 40000 0>;
+	};
+
 	fiq_debugger: fiq-debugger {
 		status = "okay";
 		compatible = "rockchip,fiq-debugger";
@@ -222,7 +229,7 @@
 };
 
 &threshold {
-	temperature = <85000>;
+	temperature = <60000>;
 };
 
 &target {
@@ -231,6 +238,24 @@
 
 &soc_crit {
 	temperature = <105000>;
+};
+
+&soc_thermal {
+	sustainable-power = <5000>; /* milliwatts */
+	cooling-maps {
+		map3 {
+			trip = <&target>;
+			cooling-device =
+				<&fan0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+			contribution = <8192>;
+		};
+		map4 {
+			trip = <&threshold>;
+			cooling-device =
+				<&fan0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+			contribution = <8192>;
+		};
+	};
 };
 
 &tsadc {
