@@ -49,4 +49,6 @@ obj-$(CONFIG_UNWINDER_PROLOGUE) += unwind_prologue.o
 
 obj-$(CONFIG_PERF_EVENTS)	+= perf_event.o perf_regs.o
 
+obj-$(CONFIG_KPROBES)		+= kprobes.o
+
 CPPFLAGS_vmlinux.lds		:= $(KBUILD_CFLAGS)
