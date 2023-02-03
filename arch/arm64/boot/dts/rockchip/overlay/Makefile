@@ -33,6 +33,8 @@ dtbo-$(CONFIG_ARCH_ROCKCHIP) += \
 	rock-4-okdo-5mp-camera.dtbo \
 	rock-4-rpi-camera-v1p3.dtbo \
 	rock-4-rpi-camera-v2.dtbo \
+	rock-4ab-raspi-7inch-touchscreen.dtbo \
+	rock-4c-plus-raspi-7inch-touchscreen.dtbo \
 	rock-4c-plus-radxa-display-8hd.dtbo \
 	rock-4c-plus-radxa-display-10hd.dtbo \
 	rock-4c-plus-radxa-display-10fhd.dtbo \
