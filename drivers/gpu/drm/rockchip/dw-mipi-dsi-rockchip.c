@@ -278,6 +278,8 @@ struct dw_mipi_dsi_rockchip {
 
 	/* dual-channel */
 	bool is_slave;
+	bool is_dsi0;
+	struct dw_mipi_dsi_rockchip *dsi0;
 	struct dw_mipi_dsi_rockchip *slave;
 
 	/* optional external dphy */
@@ -818,6 +820,9 @@ static void dw_mipi_dsi_encoder_disable(struct drm_encoder *encoder)
 
 static void dw_mipi_dsi_rockchip_loader_protect(struct dw_mipi_dsi_rockchip *dsi, bool on)
 {
+	if (dsi->dsi0)
+		dw_mipi_dsi_rockchip_loader_protect(dsi->dsi0, on);
+
 	if (on) {
 		pm_runtime_get_sync(dsi->dev);
 		phy_init(dsi->phy);
@@ -900,6 +905,32 @@ static struct device
 
 	return NULL;
 }
+
+static struct device
+*dw_mipi_dsi_rockchip_find_dsi0(struct dw_mipi_dsi_rockchip *dsi)
+{
+	struct device_node *node = NULL;
+	struct platform_device *pdev;
+	struct dw_mipi_dsi_rockchip *dsi2;
+
+	node = of_parse_phandle(dsi->dev->of_node, "rockchip,dsi-dsi0", 0);
+	if (node) {
+		pdev = of_find_device_by_node(node);
+		if (!pdev)
+			return ERR_PTR(-EPROBE_DEFER);
+
+		dsi2 = platform_get_drvdata(pdev);
+		if (!dsi2) {
+			platform_device_put(pdev);
+			return ERR_PTR(-EPROBE_DEFER);
+		}
+
+		return &pdev->dev;
+	}
+
+	return NULL;
+}
+
 
 static int dw_mipi_dsi_get_dsc_info_from_sink(struct dw_mipi_dsi_rockchip *dsi,
 					      struct drm_panel *panel,
@@ -990,6 +1021,27 @@ static int dw_mipi_dsi_rockchip_bind(struct device *dev,
 		dw_mipi_dsi_set_slave(dsi->dmd, dsi->slave->dmd);
 		put_device(second);
 	}
+	if(!second){
+		second = dw_mipi_dsi_rockchip_find_dsi0(dsi);
+		if (IS_ERR(second))
+			return PTR_ERR(second);
+
+		if (second) {
+			/* we are the slave in dual-DSI */
+			dsi->dsi0 = dev_get_drvdata(second);
+			if (!dsi->dsi0) {
+				DRM_DEV_ERROR(dev, "could not get dsi0 data\n");
+				return -ENODEV;
+			}
+
+			dsi->dsi0->is_dsi0 = true;
+			dw_mipi_dsi_set_dsi0(dsi->dmd, dsi->dsi0->dmd);
+			put_device(second);
+		} else
+			dsi->is_dsi0 = of_property_read_bool(dev->of_node, "dsi1-only");
+	}
+	if (dsi->is_dsi0)
+		return 0;
 
 	if (dsi->is_slave)
 		return 0;
@@ -1035,6 +1087,9 @@ static void dw_mipi_dsi_rockchip_unbind(struct device *dev,
 {
 	struct dw_mipi_dsi_rockchip *dsi = dev_get_drvdata(dev);
 
+	if (dsi->is_dsi0)
+		return;
+
 	if (dsi->is_slave)
 		return;
 
@@ -1066,6 +1121,19 @@ static int dw_mipi_dsi_rockchip_host_attach(void *priv_data,
 	}
 
 	second = dw_mipi_dsi_rockchip_find_second(dsi);
+	if (IS_ERR(second))
+		return PTR_ERR(second);
+	if (second) {
+		ret = component_add(second, &dw_mipi_dsi_rockchip_ops);
+		if (ret) {
+			DRM_DEV_ERROR(second,
+				      "Failed to register component: %d\n",
+				      ret);
+			return ret;
+		}
+	}
+
+	second = dw_mipi_dsi_rockchip_find_dsi0(dsi);
 	if (IS_ERR(second))
 		return PTR_ERR(second);
 	if (second) {

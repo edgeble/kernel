@@ -85,8 +85,12 @@
 #define ENABLE_CMD_MODE			BIT(0)
 
 #define DSI_VID_MODE_CFG		0x38
-#define ENABLE_LOW_POWER		(0x3f << 8)
-#define ENABLE_LOW_POWER_MASK		(0x3f << 8)
+#define LP_HFP_EN			BIT(13)
+#define LP_HBP_EN			BIT(12)
+#define LP_VACT_EN			BIT(11)
+#define LP_VFP_EN			BIT(10)
+#define LP_VBP_EN			BIT(9)
+#define LP_VSA_EN			BIT(8)
 #define VID_MODE_TYPE_NON_BURST_SYNC_PULSES	0x0
 #define VID_MODE_TYPE_NON_BURST_SYNC_EVENTS	0x1
 #define VID_MODE_TYPE_BURST			0x2
@@ -268,6 +272,7 @@ struct dw_mipi_dsi {
 	} vpg_defs;
 #endif /* CONFIG_DEBUG_FS */
 
+	struct dw_mipi_dsi *dsi0;
 	struct dw_mipi_dsi *master; /* dual-dsi master ptr */
 	struct dw_mipi_dsi *slave; /* dual-dsi slave ptr */
 
@@ -376,6 +381,7 @@ static void dw_mipi_message_config(struct dw_mipi_dsi *dsi,
 {
 	bool lpm = msg->flags & MIPI_DSI_MSG_USE_LPM;
 	u32 val = 0;
+	u32 ctrl = 0;
 
 	/*
 	 * TODO dw drv improvements
@@ -394,11 +400,18 @@ static void dw_mipi_message_config(struct dw_mipi_dsi *dsi,
 	dsi_write(dsi, DSI_CMD_MODE_CFG, val);
 
 	val = dsi_read(dsi, DSI_VID_MODE_CFG);
-	if (lpm)
+	ctrl = dsi_read(dsi, DSI_LPCLK_CTRL);
+	if (lpm) {
 		val |= ENABLE_LOW_POWER_CMD;
-	else
+		ctrl &= ~PHY_TXREQUESTCLKHS;
+	} else {
 		val &= ~ENABLE_LOW_POWER_CMD;
+		ctrl |= PHY_TXREQUESTCLKHS;
+	}
+
+	ctrl |= PHY_TXREQUESTCLKHS;
 	dsi_write(dsi, DSI_VID_MODE_CFG, val);
+	dsi_write(dsi, DSI_LPCLK_CTRL, ctrl);
 }
 
 static int dw_mipi_dsi_gen_pkt_hdr_write(struct dw_mipi_dsi *dsi, u32 hdr_val)
@@ -544,14 +557,14 @@ static const struct mipi_dsi_host_ops dw_mipi_dsi_host_ops = {
 
 static void dw_mipi_dsi_video_mode_config(struct dw_mipi_dsi *dsi)
 {
-	u32 val;
+	u32 val = LP_VSA_EN | LP_VBP_EN | LP_VFP_EN |
+		  LP_VACT_EN | LP_HBP_EN | LP_HFP_EN;
 
-	/*
-	 * TODO dw drv improvements
-	 * enabling low power is panel-dependent, we should use the
-	 * panel configuration here...
-	 */
-	val = ENABLE_LOW_POWER;
+	if (dsi->mode_flags & MIPI_DSI_MODE_VIDEO_HFP)
+		val &= ~LP_HFP_EN;
+
+	if (dsi->mode_flags & MIPI_DSI_MODE_VIDEO_HBP)
+		val &= ~LP_HBP_EN;
 
 	if (dsi->mode_flags & MIPI_DSI_MODE_VIDEO_BURST)
 		val |= VID_MODE_TYPE_BURST;
@@ -575,7 +588,7 @@ static void dw_mipi_dsi_video_mode_config(struct dw_mipi_dsi *dsi)
 static void dw_mipi_dsi_set_mode(struct dw_mipi_dsi *dsi,
 				 unsigned long mode_flags)
 {
-	u32 val;
+	u32 val = 0;
 
 	dsi_write(dsi, DSI_PWR_UP, RESET);
 
@@ -586,7 +599,15 @@ static void dw_mipi_dsi_set_mode(struct dw_mipi_dsi *dsi,
 		dsi_write(dsi, DSI_MODE_CFG, ENABLE_CMD_MODE);
 	}
 
-	val = PHY_TXREQUESTCLKHS;
+	/* The high-speed clock is started before that the
+	 * high-speed data is sent via the data lanes.
+	 */
+	val = dsi_read(dsi, DSI_LPCLK_CTRL);
+	if(((val & PHY_TXREQUESTCLKHS) != PHY_TXREQUESTCLKHS)
+		&& (mode_flags & MIPI_DSI_MODE_VIDEO))
+		val |= PHY_TXREQUESTCLKHS;
+	val |= PHY_TXREQUESTCLKHS;
+
 	if (dsi->mode_flags & MIPI_DSI_CLOCK_NON_CONTINUOUS)
 		val |= AUTO_CLKLANE_CTRL;
 	dsi_write(dsi, DSI_LPCLK_CTRL, val);
@@ -607,6 +628,8 @@ static void dw_mipi_dsi_disable(struct dw_mipi_dsi *dsi)
 
 	if (dsi->slave)
 		dw_mipi_dsi_disable(dsi->slave);
+	if (dsi->dsi0)
+		dw_mipi_dsi_disable(dsi->dsi0);
 }
 
 static void dw_mipi_dsi_init(struct dw_mipi_dsi *dsi)
@@ -865,6 +888,8 @@ static void dw_mipi_dsi_post_disable(struct dw_mipi_dsi *dsi)
 	dw_mipi_dsi_set_mode(dsi, 0);
 	if (dsi->slave)
 		dw_mipi_dsi_set_mode(dsi->slave, 0);
+	if (dsi->dsi0)
+		dw_mipi_dsi_set_mode(dsi->dsi0, 0);
 }
 
 static void dw_mipi_dsi_bridge_post_disable(struct drm_bridge *bridge)
@@ -911,6 +936,8 @@ static void dw_mipi_dsi_bridge_mode_set(struct drm_bridge *bridge,
 
 	if (dsi->slave)
 		drm_mode_copy(&dsi->slave->mode, adjusted_mode);
+	if (dsi->dsi0)
+		drm_mode_copy(&dsi->dsi0->mode, adjusted_mode);
 }
 
 static void dw_mipi_dsi_pre_enable(struct dw_mipi_dsi *dsi)
@@ -921,6 +948,8 @@ static void dw_mipi_dsi_pre_enable(struct dw_mipi_dsi *dsi)
 	int ret;
 	u32 lanes = dw_mipi_dsi_get_lanes(dsi);
 
+	if (dsi->dsi0)
+		dw_mipi_dsi_pre_enable(dsi->dsi0);
 	if (dsi->apb_rst) {
 		reset_control_assert(dsi->apb_rst);
 		usleep_range(10, 20);
@@ -978,6 +1007,8 @@ static void dw_mipi_dsi_bridge_pre_enable(struct drm_bridge *bridge)
 
 static void dw_mipi_dsi_enable(struct dw_mipi_dsi *dsi)
 {
+	if (dsi->dsi0)
+		dw_mipi_dsi_enable(dsi->dsi0);
 	if (dsi->mode_flags & MIPI_DSI_MODE_VIDEO) {
 		dw_mipi_dsi_set_mode(dsi, MIPI_DSI_MODE_VIDEO);
 		if (dsi->slave)
@@ -1224,6 +1255,19 @@ void dw_mipi_dsi_set_slave(struct dw_mipi_dsi *dsi, struct dw_mipi_dsi *slave)
 	dsi->slave->mode_flags = dsi->mode_flags;
 }
 EXPORT_SYMBOL_GPL(dw_mipi_dsi_set_slave);
+
+void dw_mipi_dsi_set_dsi0(struct dw_mipi_dsi *dsi, struct dw_mipi_dsi *dsi0)
+{
+	/* introduce controllers to each other */
+	dsi->dsi0 = dsi0;
+
+	/* migrate settings for already attached displays */
+	dsi->dsi0->lanes = dsi->lanes;
+	dsi->dsi0->channel = dsi->channel;
+	dsi->dsi0->format = dsi->format;
+	dsi->dsi0->mode_flags = dsi->mode_flags;
+}
+EXPORT_SYMBOL_GPL(dw_mipi_dsi_set_dsi0);
 
 /*
  * Probe/remove API, used from platforms based on the DRM bridge API.
