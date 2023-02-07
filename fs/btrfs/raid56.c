@@ -912,7 +912,7 @@ static struct sector_ptr *sector_in_rbio(struct btrfs_raid_bio *rbio,
 static struct btrfs_raid_bio *alloc_rbio(struct btrfs_fs_info *fs_info,
 					 struct btrfs_io_context *bioc)
 {
-	const unsigned int real_stripes = bioc->num_stripes - bioc->num_tgtdevs;
+	const unsigned int real_stripes = bioc->num_stripes - bioc->replace_nr_stripes;
 	const unsigned int stripe_npages = BTRFS_STRIPE_LEN >> PAGE_SHIFT;
 	const unsigned int num_pages = stripe_npages * real_stripes;
 	const unsigned int stripe_nsectors =
@@ -1282,10 +1282,16 @@ static int rmw_assemble_write_bios(struct btrfs_raid_bio *rbio,
 			goto error;
 	}
 
-	if (likely(!rbio->bioc->num_tgtdevs))
+	if (likely(!rbio->bioc->replace_nr_stripes))
 		return 0;
 
-	/* Make a copy for the replace target device. */
+	/*
+	 * Make a copy for the replace target device.
+	 *
+	 * Thus the source stripe number (in replace_stripe_src) should be valid.
+	 */
+	ASSERT(rbio->bioc->replace_stripe_src >= 0);
+
 	for (total_sector_nr = 0; total_sector_nr < rbio->nr_sectors;
 	     total_sector_nr++) {
 		struct sector_ptr *sector;
@@ -1293,7 +1299,12 @@ static int rmw_assemble_write_bios(struct btrfs_raid_bio *rbio,
 		stripe = total_sector_nr / rbio->stripe_nsectors;
 		sectornr = total_sector_nr % rbio->stripe_nsectors;
 
-		if (!rbio->bioc->tgtdev_map[stripe]) {
+		/*
+		 * For RAID56, there is only one device that can be replaced,
+		 * and replace_stripe_src[0] indicates the stripe number we
+		 * need to copy from.
+		 */
+		if (stripe != rbio->bioc->replace_stripe_src) {
 			/*
 			 * We can skip the whole stripe completely, note
 			 * total_sector_nr will be increased by one anyway.
@@ -1316,7 +1327,7 @@ static int rmw_assemble_write_bios(struct btrfs_raid_bio *rbio,
 		}
 
 		ret = rbio_add_io_sector(rbio, bio_list, sector,
-					 rbio->bioc->tgtdev_map[stripe],
+					 rbio->real_stripes,
 					 sectornr, REQ_OP_WRITE);
 		if (ret)
 			goto error;
@@ -2442,7 +2453,12 @@ static int finish_parity_scrub(struct btrfs_raid_bio *rbio, int need_check)
 	else
 		BUG();
 
-	if (bioc->num_tgtdevs && bioc->tgtdev_map[rbio->scrubp]) {
+	/*
+	 * Replace is running and our P/Q stripe is being replaced, then we
+	 * need to duplicate the final write to replace target.
+	 */
+	if (bioc->replace_nr_stripes &&
+	    bioc->replace_stripe_src == rbio->scrubp) {
 		is_replace = 1;
 		bitmap_copy(pbitmap, &rbio->dbitmap, rbio->stripe_nsectors);
 	}
@@ -2544,13 +2560,18 @@ writeback:
 	if (!is_replace)
 		goto submit_write;
 
+	/*
+	 * Replace is running and our parity stripe needs to be duplicated to
+	 * the target device.  Check we have a valid source stripe number.
+	 */
+	ASSERT(rbio->bioc->replace_stripe_src >= 0);
 	for_each_set_bit(sectornr, pbitmap, rbio->stripe_nsectors) {
 		struct sector_ptr *sector;
 
 		sector = rbio_stripe_sector(rbio, rbio->scrubp, sectornr);
 		ret = rbio_add_io_sector(rbio, &bio_list, sector,
-				       bioc->tgtdev_map[rbio->scrubp],
-				       sectornr, REQ_OP_WRITE);
+					 rbio->real_stripes,
+					 sectornr, REQ_OP_WRITE);
 		if (ret)
 			goto cleanup;
 	}
