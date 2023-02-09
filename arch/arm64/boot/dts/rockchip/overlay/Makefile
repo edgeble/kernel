@@ -2,20 +2,29 @@
 dtbo-$(CONFIG_ARCH_ROCKCHIP) += \
 	rk3588-i2c0-m1.dtbo \
 	rk3588-i2c1-m0.dtbo \
+	rk3588-i2c2-m4.dtbo \
 	rk3588-i2c3-m1.dtbo \
+	rk3588-i2c4-m3.dtbo \
+	rk3588-i2c6-m3.dtbo \
 	rk3588-i2c7-m3.dtbo \
+	rk3588-i2c8-m2.dtbo \
 	rk3588-i2c8-m4.dtbo \
+	rk3588-pwm0-m2.dtbo \
+	rk3588-pwm1-m2.dtbo \
 	rk3588-pwm2-m1.dtbo \
 	rk3588-pwm3-m1.dtbo \
+	rk3588-pwm3-m3.dtbo \
 	rk3588-pwm5-m2.dtbo \
 	rk3588-pwm6-m2.dtbo \
 	rk3588-pwm7-m3.dtbo \
 	rk3588-pwm8-m0.dtbo \
+	rk3588-pwm11-m1.dtbo \
 	rk3588-pwm12-m0.dtbo \
 	rk3588-pwm13-m0.dtbo \
 	rk3588-pwm13-m2.dtbo \
 	rk3588-pwm14-m0.dtbo \
 	rk3588-pwm14-m1.dtbo \
+	rk3588-pwm14-m2.dtbo \
 	rk3588-pwm15-m0.dtbo \
 	rk3588-pwm15-m1.dtbo \
 	rk3588-pwm15-m3.dtbo \
@@ -23,13 +32,16 @@ dtbo-$(CONFIG_ARCH_ROCKCHIP) += \
 	rk3588-spi0-m2-cs1-spidev.dtbo \
 	rk3588-spi1-m1-cs0-spidev.dtbo \
 	rk3588-spi1-m1-cs1-spidev.dtbo \
+	rk3588-spi4-m2-cs0-spidev.dtbo \
 	rk3588-uart2-m0.dtbo \
 	rk3588-uart2-m2.dtbo \
 	rk3588-uart3-m1.dtbo \
 	rk3588-uart4-m2.dtbo \
+	rk3588-uart6-m1.dtbo \
 	rk3588-uart7-m1-ctsn-rtsn.dtbo \
 	rk3588-uart7-m1.dtbo \
 	rk3588-uart7-m2.dtbo \
+	rk3588-uart8-m0.dtbo \
 	rock-4-okdo-5mp-camera.dtbo \
 	rock-4-rpi-camera-v1p3.dtbo \
 	rock-4-rpi-camera-v2.dtbo \
