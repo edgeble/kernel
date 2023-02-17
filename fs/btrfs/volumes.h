@@ -404,17 +404,74 @@ struct btrfs_io_context {
 	u64 map_type; /* get from map_lookup->type */
 	struct bio *orig_bio;
 	atomic_t error;
-	int max_errors;
-	int num_stripes;
-	int mirror_num;
-	int num_tgtdevs;
-	int *tgtdev_map;
+	u16 max_errors;
+
 	/*
-	 * logical block numbers for the start of each stripe
-	 * The last one or two are p/q.  These are sorted,
-	 * so raid_map[0] is the start of our full stripe
+	 * The total number of stripes, including the extra duplicated
+	 * stripe for replace.
 	 */
-	u64 *raid_map;
+	u16 num_stripes;
+
+	/*
+	 * The mirror_num of this bioc.
+	 *
+	 * This is for reads which use 0 as mirror_num, thus we should return a
+	 * valid mirror_num (>0) for the reader.
+	 */
+	u16 mirror_num;
+
+	/*
+	 * The following two members are for dev-replace case only.
+	 *
+	 * @replace_nr_stripes:	Number of duplicated stripes which need to be
+	 *			written to replace target.
+	 *			Should be <= 2 (2 for DUP, otherwise <= 1).
+	 * @replace_stripe_src:	The array indicates where the duplicated stripes
+	 *			are from.
+	 *
+	 * The @replace_stripe_src[] array is mostly for RAID56 cases.
+	 * As non-RAID56 stripes share the same contents of the mapped range,
+	 * thus no need to bother where the duplicated ones are from.
+	 *
+	 * But for RAID56 case, all stripes contain different contents, thus
+	 * we need a way to know the mapping.
+	 *
+	 * There is an example for the two members, using a RAID5 write:
+	 *
+	 *   num_stripes:	4 (3 + 1 duplicated write)
+	 *   stripes[0]:	dev = devid 1, physical = X
+	 *   stripes[1]:	dev = devid 2, physical = Y
+	 *   stripes[2]:	dev = devid 3, physical = Z
+	 *   stripes[3]:	dev = devid 0, physical = Y
+	 *
+	 * replace_nr_stripes = 1
+	 * replace_stripe_src = 1	<- Means stripes[1] is involved in replace.
+	 *				   The duplicated stripe index would be
+	 *				   (@num_stripes - 1).
+	 *
+	 * Note, that we can still have cases replace_nr_stripes = 2 for DUP.
+	 * In that case, all stripes share the same content, thus we don't
+	 * need to bother @replace_stripe_src value at all.
+	 */
+	u16 replace_nr_stripes;
+	s16 replace_stripe_src;
+	/*
+	 * Logical bytenr of the full stripe start, only for RAID56 cases.
+	 *
+	 * When this value is set to other than (u64)-1, the stripes[] should
+	 * follow this pattern:
+	 *
+	 * (real_stripes = num_stripes - replace_nr_stripes)
+	 * (data_stripes = (is_raid6) ? (real_stripes - 2) : (real_stripes - 1))
+	 *
+	 * stripes[0]:			The first data stripe
+	 * stripes[1]:			The second data stripe
+	 * ...
+	 * stripes[data_stripes - 1]:	The last data stripe
+	 * stripes[data_stripes]:	The P stripe
+	 * stripes[data_stripes + 1]:	The Q stripe (only for RAID6).
+	 */
+	u64 full_stripe_logical;
 	struct btrfs_io_stripe stripes[];
 };
 
