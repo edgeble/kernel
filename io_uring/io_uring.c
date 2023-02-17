@@ -1291,7 +1291,7 @@ static void io_req_local_work_add(struct io_kiocb *req)
 	/* needed for the following wake up */
 	smp_mb__after_atomic();
 
-	if (unlikely(atomic_read(&req->task->io_uring->in_cancel))) {
+	if (unlikely(test_bit(0, &ctx->in_cancel))) {
 		io_move_task_work_from_local(ctx);
 		goto put_ref;
 	}
