@@ -3192,6 +3192,46 @@ static s64 tctx_inflight(struct io_uring_task *tctx, bool tracked)
 	return percpu_counter_sum(&tctx->inflight);
 }
 
+static __cold void io_uring_dec_cancel(struct io_uring_task *tctx,
+				       struct io_sq_data *sqd)
+{
+	if (!atomic_dec_return(&tctx->in_cancel))
+		return;
+
+	if (!sqd) {
+		struct io_tctx_node *node;
+		unsigned long index;
+
+		xa_for_each(&tctx->xa, index, node)
+			clear_bit(0, &node->ctx->in_cancel);
+	} else {
+		struct io_ring_ctx *ctx;
+
+		list_for_each_entry(ctx, &sqd->ctx_list, sqd_list)
+			clear_bit(0, &ctx->in_cancel);
+	}
+}
+
+static __cold void io_uring_inc_cancel(struct io_uring_task *tctx,
+				       struct io_sq_data *sqd)
+{
+	if (atomic_inc_return(&tctx->in_cancel) != 1)
+		return;
+
+	if (!sqd) {
+		struct io_tctx_node *node;
+		unsigned long index;
+
+		xa_for_each(&tctx->xa, index, node)
+			set_bit(0, &node->ctx->in_cancel);
+	} else {
+		struct io_ring_ctx *ctx;
+
+		list_for_each_entry(ctx, &sqd->ctx_list, sqd_list)
+			set_bit(0, &ctx->in_cancel);
+	}
+}
+
 /*
  * Find any io_uring ctx that this task has registered or done IO on, and cancel
  * requests. @sqd should be not-null IFF it's an SQPOLL thread cancellation.
@@ -3210,7 +3250,7 @@ __cold void io_uring_cancel_generic(bool cancel_all, struct io_sq_data *sqd)
 	if (tctx->io_wq)
 		io_wq_exit_start(tctx->io_wq);
 
-	atomic_inc(&tctx->in_cancel);
+	io_uring_inc_cancel(tctx, sqd);
 	do {
 		bool loop = false;
 
@@ -3263,7 +3303,7 @@ __cold void io_uring_cancel_generic(bool cancel_all, struct io_sq_data *sqd)
 		 * We shouldn't run task_works after cancel, so just leave
 		 * ->in_cancel set for normal exit.
 		 */
-		atomic_dec(&tctx->in_cancel);
+		io_uring_dec_cancel(tctx, sqd);
 		/* for exec all current's requests should be gone, kill tctx */
 		__io_uring_free(current);
 	}
