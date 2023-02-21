@@ -58,7 +58,7 @@ struct io_uring_task {
 
 	struct xarray			xa;
 	struct wait_queue_head		wait;
-	atomic_t			in_idle;
+	atomic_t			in_cancel;
 	atomic_t			inflight_tracked;
 	struct percpu_counter		inflight;
 
@@ -211,6 +211,8 @@ struct io_ring_ctx {
 		enum task_work_notify_mode	notify_method;
 		struct io_rings			*rings;
 		struct task_struct		*submitter_task;
+		/* local ctx cache of task cancel state */
+		unsigned long			in_cancel;
 		struct percpu_ref		refs;
 	} ____cacheline_aligned_in_smp;
 
