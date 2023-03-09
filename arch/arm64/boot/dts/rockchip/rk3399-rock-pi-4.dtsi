@@ -65,15 +65,6 @@
 		};
 	};
 
-	rk_headset: rk-headset {
-		status = "diabled";
-		compatible = "rockchip_headset";
-		headset_gpio = <&gpio1 RK_PA0 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&hp_det>;
-		io-channels = <&saradc 2>;
-	};
-
 	vcc12v_dcin: dc-12v {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc12v_dcin";
