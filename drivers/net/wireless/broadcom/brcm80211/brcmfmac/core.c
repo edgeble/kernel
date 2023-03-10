@@ -1456,27 +1456,24 @@ void brcmf_fw_crashed(struct device *dev)
 		schedule_work(&drvr->bus_reset);
 }
 
+#ifdef CONFIG_BRCMF_CMD_TIMEOUT_REBOOT
 void brcmf_bus_handle_cmd_timeout(struct brcmf_bus *bus)
 {
 	struct brcmf_pub *drvr = bus->drvr;
 
-    drvr->cmd_timeout++;
+	bphy_err(drvr, "try to reset bus\n");
 
-	bphy_err(drvr, "cmd timeout = %d\n", drvr->cmd_timeout);
-
-    if (drvr->cmd_timeout == BRCMF_MAX_CMD_TIMEOUT) {
-        drvr->cmd_timeout = 0;
-
-    	if (drvr->bus_reset.func)
-    		schedule_work(&drvr->bus_reset);
-    }
+	if (drvr->bus_reset.func)
+		schedule_work(&drvr->bus_reset);
 }
+#endif /* CONFIG_BRCMF_CMD_TIMEOUT_REBOOT */
 
 void brcmf_detach(struct device *dev)
 {
 	s32 i;
 	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
 	struct brcmf_pub *drvr = bus_if->drvr;
+	struct net_device *ndev;
 
 	brcmf_dbg(TRACE, "Enter\n");
 
@@ -1492,6 +1489,23 @@ void brcmf_detach(struct device *dev)
 #endif
 
 	brcmf_bus_change_state(bus_if, BRCMF_BUS_DOWN);
+
+	ndev = drvr->iflist[0]->ndev;
+
+	if (ndev) {
+		rtnl_lock();
+		if (ndev->flags & IFF_UP) {
+			/* If IFF_UP is still up, it indicates that
+			 * "ifconfig wlan0 down" hasn't been called.
+			 * So invoke dev_close explicitly here to
+			 * bring down the interface.
+			 */
+			brcmf_dbg(TRACE, "net device is up, bring it down first\n");
+			dev_close(ndev);
+		}
+		rtnl_unlock();
+	}
+
 	/* make sure primary interface removed last */
 	for (i = BRCMF_MAX_IFS - 1; i > -1; i--) {
 		if (drvr->iflist[i])

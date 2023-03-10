@@ -64,8 +64,8 @@
 #define CY_4339_MES_WATERMARK	80
 #define CY_4339_MESBUSYCTRL	(CY_4339_MES_WATERMARK | \
 				 SBSDIO_MESBUSYCTRL_ENAB)
-#define CY_43455_F2_WATERMARK	0x60
-#define CY_43455_MES_WATERMARK	0x50
+#define CY_43455_F2_WATERMARK	0x40
+#define CY_43455_MES_WATERMARK	0x40
 #define CY_43455_MESBUSYCTRL	(CY_43455_MES_WATERMARK | \
 				 SBSDIO_MESBUSYCTRL_ENAB)
 #define CY_435X_F2_WATERMARK	0x40
@@ -3013,12 +3013,18 @@ static void brcmf_sdio_dpc(struct brcmf_sdio *bus)
 			}
 			sdio_release_host(bus->sdiodev->func1);
 		}
-	} else if (atomic_read(&bus->intstatus) ||
-		   atomic_read(&bus->ipend) > 0 ||
-		   (!atomic_read(&bus->fcstate) &&
+	} else {
+		sdio_claim_host(bus->sdiodev->func1);
+		err = brcmf_sdio_intr_rstatus(bus);
+		sdio_release_host(bus->sdiodev->func1);
+
+		if (atomic_read(&bus->intstatus) ||
+		    atomic_read(&bus->ipend) > 0 ||
+		    (!atomic_read(&bus->fcstate) &&
 		    brcmu_pktq_mlen(&bus->txq, ~bus->flowcontrol) &&
 		    data_ok(bus))) {
-		bus->dpc_triggered = true;
+			bus->dpc_triggered = true;
+		}
 	}
 }
 
@@ -3999,7 +4005,7 @@ static void brcmf_sdio_bus_watchdog(struct brcmf_sdio *bus)
 	brcmf_dbg(TIMER, "Enter\n");
 
 	/* Poll period: check device if appropriate. */
-	if (/* !bus->sr_enabled && */
+	if (!bus->sr_enabled &&
 	    bus->poll && (++bus->polltick >= bus->pollrate)) {
 		u32 intstatus = 0;
 
@@ -4451,9 +4457,9 @@ brcmf_sdio_probe_attach(struct brcmf_sdio *bus)
 
 	/* Set the poll and/or interrupt flags */
 	bus->intr = true;
-	bus->poll = true;
+	bus->poll = false;
 	if (bus->poll)
-		bus->pollrate = 10;
+		bus->pollrate = 1;
 
 	return true;
 
@@ -4531,12 +4537,12 @@ static int brcmf_sdio_bus_reset(struct device *dev)
 
 	brcmf_dbg(SDIO, "Enter\n");
 
-#if (0)
+#ifndef CONFIG_BRCMF_CMD_TIMEOUT_REBOOT
 	/* start by unregistering irqs */
 	brcmf_sdiod_intr_unregister(sdiodev);
 
 	brcmf_sdiod_remove(sdiodev);
-#endif
+#endif /* CONFIG_BRCMF_CMD_TIMEOUT_REBOOT */
 
 	brcmf_bus_change_state(sdiodev->bus_if, BRCMF_BUS_DOWN);
 
@@ -4545,14 +4551,14 @@ static int brcmf_sdio_bus_reset(struct device *dev)
 	mmc_hw_reset(sdiodev->func1->card->host);
 	sdio_release_host(sdiodev->func1);
 
-#if (0)
+#ifndef CONFIG_BRCMF_CMD_TIMEOUT_REBOOT
 	ret = brcmf_sdiod_probe(sdiodev);
 	if (ret) {
 		brcmf_err("Failed to probe after sdio device reset: ret %d\n",
 			  ret);
 		brcmf_sdiod_remove(sdiodev);
 	}
-#endif
+#endif /* CONFIG_BRCMF_CMD_TIMEOUT_REBOOT */
 
 	return ret;
 }

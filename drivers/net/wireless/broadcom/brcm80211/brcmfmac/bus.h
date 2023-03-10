@@ -10,6 +10,8 @@
 #include "debug.h"
 #include <linux/version.h>
 
+#define CONFIG_BRCMF_CMD_TIMEOUT_REBOOT
+
 /* IDs of the 6 default common rings of msgbuf protocol */
 #define BRCMF_H2D_MSGRING_CONTROL_SUBMIT	0
 #define BRCMF_H2D_MSGRING_RXPOST_SUBMIT		1
@@ -30,8 +32,8 @@
 /* The maximum console interval value (5 mins) */
 #define MAX_CONSOLE_INTERVAL	(5 * 60)
 
-/* The maximum firmware command timeout count value */
-#define BRCMF_MAX_CMD_TIMEOUT   (2)
+/* The maximum firmware command timeout retry count value */
+#define BRCMF_MAX_CMD_TIMEOUT_RETRIES   (1)
 
 /* The level of bus communication with the dongle */
 enum brcmf_bus_state {
@@ -301,8 +303,10 @@ void brcmf_fw_crashed(struct device *dev);
 /* Configure the "global" bus state used by upper layers */
 void brcmf_bus_change_state(struct brcmf_bus *bus, enum brcmf_bus_state state);
 
+#ifdef CONFIG_BRCMF_CMD_TIMEOUT_REBOOT
 /* Handle firmware command timeout */
 void brcmf_bus_handle_cmd_timeout(struct brcmf_bus *bus);
+#endif /* CONFIG_BRCMF_CMD_TIMEOUT_REBOOT */
 
 s32 brcmf_iovar_data_set(struct device *dev, char *name, void *data, u32 len);
 void brcmf_bus_add_txhdrlen(struct device *dev, uint len);
