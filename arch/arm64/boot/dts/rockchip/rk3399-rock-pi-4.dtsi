@@ -718,6 +718,7 @@
 
 &u2phy0 {
 	status = "okay";
+	wakeup-source;
 
 	u2phy0_otg: otg-port {
 		status = "okay";
@@ -731,6 +732,7 @@
 
 &u2phy1 {
 	status = "okay";
+	wakeup-source;
 
 	u2phy1_otg: otg-port {
 		status = "okay";
@@ -740,6 +742,36 @@
 		phy-supply = <&vcc5v0_host>;
 		status = "okay";
 	};
+};
+
+&rockchip_suspend {
+	status = "okay";
+	rockchip,sleep-debug-en = <1>;
+	rockchip,sleep-mode-config = <
+		(0
+		| RKPM_SLP_ARMPD
+		| RKPM_SLP_PERILPPD
+		| RKPM_SLP_DDR_RET
+		| RKPM_SLP_PLLPD
+		| RKPM_SLP_CENTER_PD
+		)
+	>;
+	rockchip,wakeup-config = <
+		(0
+		| RKPM_GPIO_WKUP_EN
+		| RKPM_PWM_WKUP_EN
+		| RKPM_USB_WKUP_EN
+		| RKPM_USB_LINESTATE_WKUP_EN
+		)
+	>;
+	rockchip,pwm-regulator-config = <
+		(0
+		| PWM2_REGULATOR_EN
+		)
+	>;
+	rockchip,power-ctrl =
+		<&gpio1 17 GPIO_ACTIVE_HIGH>,
+		<&gpio1 14 GPIO_ACTIVE_HIGH>;
 };
 
 &uart0 {
