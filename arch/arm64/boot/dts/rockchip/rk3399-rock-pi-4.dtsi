@@ -771,7 +771,8 @@
 	>;
 	rockchip,power-ctrl =
 		<&gpio1 17 GPIO_ACTIVE_HIGH>,
-		<&gpio1 14 GPIO_ACTIVE_HIGH>;
+		<&gpio1 14 GPIO_ACTIVE_HIGH>,
+		<&gpio0 3 GPIO_ACTIVE_HIGH>;
 };
 
 &uart0 {
