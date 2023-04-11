@@ -25,6 +25,13 @@
 
 	/delete-node/ chosen;
 
+	fan0: pwm-fan {
+		compatible = "pwm-fan";
+		#cooling-cells = <2>;
+		cooling-levels = <0 64 128 192 255>;
+		pwms = <&pwm3 0 10000 0>;
+	};
+
 	vcc12v_dcin: vcc12v-dcin {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc12v_dcin";
@@ -685,6 +692,33 @@
 			 &i2s0_sclk
 			 &i2s0_sdi0
 			 &i2s0_sdo0>;
+};
+
+&pwm3 {
+	status = "okay";
+	pinctrl-0 = <&pwm3m1_pins>;
+};
+
+&threshold {
+	temperature = <60000>;
+};
+
+&soc_thermal {
+	sustainable-power = <5000>; /* milliwatts */
+	cooling-maps {
+		map3 {
+			trip = <&target>;
+			cooling-device =
+				<&fan0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+			contribution = <8192>;
+		};
+		map4 {
+			trip = <&threshold>;
+			cooling-device =
+				<&fan0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+			contribution = <8192>;
+		};
+	};
 };
 
 &pinctrl {
