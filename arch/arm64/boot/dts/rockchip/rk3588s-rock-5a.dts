@@ -89,7 +89,7 @@
 		status = "okay";
 		compatible = "rockchip,hdmi";
 		rockchip,mclk-fs = <512>;
-		rockchip,card-name= "rockchip,dp0";
+		rockchip,card-name= "rockchip-hdmi1";
 		rockchip,cpu = <&spdif_tx2>;
 		rockchip,codec = <&dp0 1>;
 		rockchip,jack-det;
