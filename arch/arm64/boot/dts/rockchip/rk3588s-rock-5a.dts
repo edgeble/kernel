@@ -741,7 +741,7 @@
 &avdd_0v75_s0 {
 	regulator-state-mem {
 		regulator-on-in-suspend;
-		regulator-min-microvolt = <837500>;
+		regulator-suspend-microvolt = <837500>;
 	};
 };
 
