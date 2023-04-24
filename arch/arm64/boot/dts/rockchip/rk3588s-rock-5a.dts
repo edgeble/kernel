@@ -106,7 +106,6 @@
 		io-channels = <&saradc 3>;
 		io-channel-names = "adc-detect";
 		keyup-threshold-microvolt = <1800000>;
-		poll-interval = <100>;
 		pinctrl-0 = <&hp_det>;
 		pinctrl-names = "default";
 		hp-det-gpio = <&gpio1 RK_PC4 GPIO_ACTIVE_HIGH>;
