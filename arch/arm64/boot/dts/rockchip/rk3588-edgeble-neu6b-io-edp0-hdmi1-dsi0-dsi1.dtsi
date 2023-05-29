@@ -1,0 +1,663 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2023 Edgeble AI Technologies Pvt. Ltd.
+ */
+
+&usbdrd3_0 {
+	status = "okay";
+};
+
+/* OTG, set dr_mode = "host"; for host */
+&usbdrd_dwc3_0 {
+	status = "okay";
+};
+
+&u2phy0_otg {
+	status = "okay";
+};
+
+&u2phy0 {
+	status = "okay";
+};
+
+&usbdp_phy0_u3 {
+	status = "okay";
+};
+
+&usbdp_phy0 {
+	status = "okay";
+};
+
+/* DP0 */
+&pinctrl {
+	dp0 {
+		dp0_hpd: dp0-hpd {
+			rockchip,pins = <1 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+};
+
+&dp0 {
+//	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&dp0_hpd>;
+	hpd-gpios = <&gpio1 RK_PA0 GPIO_ACTIVE_HIGH>; /* DP1_HPDIN_M0 */
+};
+
+&usbdp_phy0_dp {
+	status = "okay";
+};
+
+&usbdp_phy0 {
+	status = "okay";
+	rockchip,dp-lane-mux = < 2 3 >;
+};
+
+&usbdrd3_1 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_1 {
+	status = "okay";
+};
+
+&u2phy1_otg {
+	status = "okay";
+};
+
+&u2phy1 {
+	status = "okay";
+};
+
+&usbdp_phy1_u3 {
+	status = "okay";
+};
+
+&usbdp_phy1 {
+	status = "okay";
+};
+
+/* DP1 */
+&pinctrl {
+	dp1 {
+		dp1_hpd: dp1-hpd {
+			rockchip,pins = <1 RK_PA1 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+};
+
+&dp1 {
+//	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&dp1_hpd>;
+	hpd-gpios = <&gpio1 RK_PA1 GPIO_ACTIVE_HIGH>; /* DP2_HPDIN_M0 */
+};
+
+&usbdp_phy1_dp {
+	status = "okay";
+};
+
+&usbdp_phy1 {
+	status = "okay";
+	rockchip,dp-lane-mux = < 2 3 >;
+};
+
+/* eDP0 */
+/ {
+	backlight_edp: backlight-edp {
+		compatible = "pwm-backlight";
+		pwms = <&pwm9 0 25000 0>;
+		brightness-levels = <
+			  0  20  20  21  21  22  22  23
+			 23  24  24  25  25  26  26  27
+			 27  28  28  29  29  30  30  31
+			 31  32  32  33  33  34  34  35
+			 35  36  36  37  37  38  38  39
+			 40  41  42  43  44  45  46  47
+			 48  49  50  51  52  53  54  55
+			 56  57  58  59  60  61  62  63
+			 64  65  66  67  68  69  70  71
+			 72  73  74  75  76  77  78  79
+			 80  81  82  83  84  85  86  87
+			 88  89  90  91  92  93  94  95
+			 96  97  98  99 100 101 102 103
+			104 105 106 107 108 109 110 111
+			112 113 114 115 116 117 118 119
+			120 121 122 123 124 125 126 127
+			128 129 130 131 132 133 134 135
+			136 137 138 139 140 141 142 143
+			144 145 146 147 148 149 150 151
+			152 153 154 155 156 157 158 159
+			160 161 162 163 164 165 166 167
+			168 169 170 171 172 173 174 175
+			176 177 178 179 180 181 182 183
+			184 185 186 187 188 189 190 191
+			192 193 194 195 196 197 198 199
+			200 201 202 203 204 205 206 207
+			208 209 210 211 212 213 214 215
+			216 217 218 219 220 221 222 223
+			224 225 226 227 228 229 230 231
+			232 233 234 235 236 237 238 239
+			240 241 242 243 244 245 246 247
+			248 249 250 251 252 253 254 255
+		>;
+		default-brightness-level = <200>;
+		enable-gpios = <&gpio4 RK_PB7 GPIO_ACTIVE_HIGH>; /* EDP_BL_EN */
+	};
+
+	vcc3v3_sys: vcc3v3-sys {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc3v3_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&vcc5v0_sys>;
+	};
+
+	vcc3v3_lcd_edp: vcc3v3-lcd-edp {
+		compatible = "regulator-fixed";
+		gpio = <&gpio1 RK_PD2 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-name = "vcc3v3_lcd_edp";
+		regulator-boot-on;
+		vin-supply = <&vcc3v3_sys>;
+		regulator-state-mem {
+			regulator-off-in-suspend;
+		};
+	};
+
+	edp_panel: edp-panel {
+		compatible = "simple-panel";
+		backlight = <&backlight_edp>;
+		power-supply = <&vcc3v3_lcd_edp>;
+		pinctrl-names = "default";
+		prepare-delay-ms = <100>;
+		enable-delay-ms = <100>;
+		bpc = <8>;
+		width-mm = <305>;
+		height-mm = <107>;
+		display-timings {
+			native-mode = <&timing0>;
+			timing0: timing0 {
+				clock-frequency = <241500000>;
+				hactive = <2560>;
+				vactive = <1440>;
+				hfront-porch = <80>;
+				hsync-len = <32>;
+				hback-porch = <48>;
+				vfront-porch = <31>;
+				vsync-len = <5>;
+				vback-porch = <3>;
+				hsync-active = <0>;
+				vsync-active = <0>;
+				de-active = <0>;
+				pixelclk-active = <0>;
+			};
+		};
+
+		port {
+			panel_in_edp: endpoint {
+					remote-endpoint = <&edp_out_panel>;
+			};
+		};
+	};
+};
+
+&pwm9 {
+	status = "okay";
+};
+
+&edp0 {
+	force-hpd;
+	status = "okay";
+
+	ports {
+		edp_out: port@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			edp_out_panel: endpoint@0 {
+				reg = <0>;
+				remote-endpoint = <&panel_in_edp>;
+			};
+		};
+	};
+};
+
+&hdptxphy0 {
+	status = "okay";
+};
+
+/* HDMI1 */
+/ {
+	hdmi1-sound {
+		status = "okay";
+		compatible = "rockchip,hdmi";
+		rockchip,mclk-fs = <128>;
+		rockchip,card-name = "rockchip-hdmi1";
+		rockchip,cpu = <&i2s6_8ch>;
+		rockchip,codec = <&hdmi1>;
+		rockchip,jack-det;
+	};
+
+	vcc3v3_sys: vcc3v3-sys {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc3v3_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&vcc5v0_sys>;
+	};
+
+	vdd_3v3_hdmitx: vdd-3v3-hdmitx-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd_3v3_hdmitx";
+		regulator-boot-on;
+		regulator-always-on;
+		enable-active-high;
+		gpio = <&gpio4 RK_PB1 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&hdmi_tx_3v3_en>;
+		vin-supply = <&vcc3v3_sys>;
+	};
+};
+
+&pinctrl {
+	hdmi1 {
+		hdmi_tx_3v3_en: hdmi-tx-3v3-en {
+			rockchip,pins = <4 RK_PB1 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+};
+
+&hdmi1 {
+	status = "okay";
+        cec-enable = "true";
+};
+
+&hdptxphy_hdmi1 {
+	status = "okay";
+};
+
+&hdptxphy_hdmi_clk1 {
+	status = "okay";
+};
+
+&display_subsystem {
+	clocks = <&hdptxphy_hdmi_clk1>;
+	clock-names = "hdmi1_phy_pll";
+};
+
+&i2s6_8ch {
+	status = "okay";
+};
+
+/* DSI0 */
+/ {
+	vcc_led1: vcc-led1 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_led1";
+		gpio = <&gpio3 RK_PC7 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-names = "default";
+		pinctrl-0 = <&dsi0_backlight_en>; /* LCD1_BL_EN */
+		regulator-always-on;
+		regulator-boot-on;
+		vin-supply = <&vcc5v0_sys>;
+	};
+
+	dsi0_backlight: dsi0-backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pwm4 0 25000 0>;
+		brightness-levels = <
+			  0  20  20  21  21  22  22  23
+			 23  24  24  25  25  26  26  27
+			 27  28  28  29  29  30  30  31
+			 31  32  32  33  33  34  34  35
+			 35  36  36  37  37  38  38  39
+			 40  41  42  43  44  45  46  47
+			 48  49  50  51  52  53  54  55
+			 56  57  58  59  60  61  62  63
+			 64  65  66  67  68  69  70  71
+			 72  73  74  75  76  77  78  79
+			 80  81  82  83  84  85  86  87
+			 88  89  90  91  92  93  94  95
+			 96  97  98  99 100 101 102 103
+			104 105 106 107 108 109 110 111
+			112 113 114 115 116 117 118 119
+			120 121 122 123 124 125 126 127
+			128 129 130 131 132 133 134 135
+			136 137 138 139 140 141 142 143
+			144 145 146 147 148 149 150 151
+			152 153 154 155 156 157 158 159
+			160 161 162 163 164 165 166 167
+			168 169 170 171 172 173 174 175
+			176 177 178 179 180 181 182 183
+			184 185 186 187 188 189 190 191
+			192 193 194 195 196 197 198 199
+			200 201 202 203 204 205 206 207
+			208 209 210 211 212 213 214 215
+			216 217 218 219 220 221 222 223
+			224 225 226 227 228 229 230 231
+			232 233 234 235 236 237 238 239
+			240 241 242 243 244 245 246 247
+			248 249 250 251 252 253 254 255
+		>;
+		default-brightness-level = <200>;
+		power-supply = <&vcc_led1>;
+	};
+};
+
+&pinctrl {
+	backlight-0 {
+		dsi0_backlight_en: dsi0-backlight-en {
+			rockchip,pins = <3 RK_PC7 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	dsi0-lcd {
+		dsi0_lcd_rst_gpio: dsi0-lcd-rst-gpio {
+			rockchip,pins = <1 RK_PC6 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+};
+
+&pwm4 {
+	status = "okay";
+	pinctrl-names = "active";
+	pinctrl-0 = <&pwm4m0_pins>;
+};
+
+&dsi0 {
+	status = "okay";
+	rockchip,lane-rate = <480>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@1 {
+			reg = <1>;
+
+			dsi0_out_panel: endpoint {
+				remote-endpoint = <&panel_in_dsi0>;
+			};
+		};
+	};
+
+	panel@0 {
+		compatible = "radxa,display-10hd-a", "jadard,jd9365da-h3";
+		reg = <0>;
+		backlight = <&dsi0_backlight>;
+		vdd-supply = <&vcc_3v3_s0>;
+		vccio-supply = <&vcc_1v8_s0>;
+		reset-gpios = <&gpio1 RK_PC6 GPIO_ACTIVE_HIGH>; /* LCD1_RESET */
+		pinctrl-names = "default";
+		pinctrl-0 = <&dsi0_lcd_rst_gpio>;
+
+		port {
+			panel_in_dsi0: endpoint {
+				remote-endpoint = <&dsi0_out_panel>;
+			};
+		};
+	};
+};
+
+&mipi_dcphy0 {
+	status = "okay";
+};
+
+/* DSI1 */
+/ {
+	vcc_led2: vcc-led2 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_led2";
+		gpio = <&gpio3 RK_PD0 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		pinctrl-names = "default";
+		pinctrl-0 = <&dsi1_backlight_en>;
+		regulator-always-on;
+		regulator-boot-on;
+		vin-supply = <&vcc5v0_sys>;
+	};
+
+	dsi1_backlight: dsi1-backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pwm8 0 25000 0>;
+		brightness-levels = <
+			  0  20  20  21  21  22  22  23
+			 23  24  24  25  25  26  26  27
+			 27  28  28  29  29  30  30  31
+			 31  32  32  33  33  34  34  35
+			 35  36  36  37  37  38  38  39
+			 40  41  42  43  44  45  46  47
+			 48  49  50  51  52  53  54  55
+			 56  57  58  59  60  61  62  63
+			 64  65  66  67  68  69  70  71
+			 72  73  74  75  76  77  78  79
+			 80  81  82  83  84  85  86  87
+			 88  89  90  91  92  93  94  95
+			 96  97  98  99 100 101 102 103
+			104 105 106 107 108 109 110 111
+			112 113 114 115 116 117 118 119
+			120 121 122 123 124 125 126 127
+			128 129 130 131 132 133 134 135
+			136 137 138 139 140 141 142 143
+			144 145 146 147 148 149 150 151
+			152 153 154 155 156 157 158 159
+			160 161 162 163 164 165 166 167
+			168 169 170 171 172 173 174 175
+			176 177 178 179 180 181 182 183
+			184 185 186 187 188 189 190 191
+			192 193 194 195 196 197 198 199
+			200 201 202 203 204 205 206 207
+			208 209 210 211 212 213 214 215
+			216 217 218 219 220 221 222 223
+			224 225 226 227 228 229 230 231
+			232 233 234 235 236 237 238 239
+			240 241 242 243 244 245 246 247
+			248 249 250 251 252 253 254 255
+		>;
+		default-brightness-level = <200>;
+		power-supply = <&vcc_led2>;
+	};
+};
+
+&pinctrl {
+	backlight-1 {
+		dsi1_backlight_en: dsi1-backlight-en {
+			rockchip,pins = <3 RK_PD0 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	dsi1-lcd {
+		dsi1_lcd_rst_gpio: dsi1-lcd-rst-gpio {
+			rockchip,pins = <0 RK_PB2 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+};
+
+&pwm8 {
+	status = "okay";
+	pinctrl-names = "active";
+	pinctrl-0 = <&pwm8m0_pins>;
+};
+
+&dsi1 {
+	status = "okay";
+	rockchip,lane-rate = <480>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@1 {
+			reg = <1>;
+
+			dsi1_out_panel: endpoint {
+				remote-endpoint = <&panel_in_dsi1>;
+			};
+		};
+	};
+
+	panel@1 {
+		compatible = "radxa,display-10hd-a", "jadard,jd9365da-h3";
+		reg = <1>;
+		backlight = <&dsi1_backlight>;
+		vdd-supply = <&vcc_3v3_s0>;
+		vccio-supply = <&vcc_1v8_s0>;
+		reset-gpios = <&gpio0 RK_PB2 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&dsi1_lcd_rst_gpio>;
+
+		port {
+			panel_in_dsi1: endpoint {
+				remote-endpoint = <&dsi1_out_panel>;
+			};
+		};
+	};
+};
+
+&mipi_dcphy1 {
+	status = "okay";
+};
+
+&display_subsystem {
+	route {
+		route_dp0: route-dp0 {
+			status = "okay";
+			force-output;
+			connect = <&vp0_out_dp0>;
+		};
+
+		route_dp1: route-dp1 {
+			status = "okay";
+			force-output;
+			connect = <&vp2_out_dp1>;
+		};
+
+		route_edp0: route-edp0 {
+			status = "okay";
+			connect = <&vp1_out_edp0>;
+		};
+
+		route_hdmi1: route-hdmi1 {
+			status = "okay";
+			connect = <&vp0_out_hdmi1>;
+		};
+
+		route_dsi0: route-dsi0 {
+			status = "okay";
+			connect = <&vp2_out_dsi0>;
+		};
+
+		route_dsi1: route-dsi1 {
+			status = "okay";
+			connect = <&vp3_out_dsi1>;
+		};
+	};
+};
+
+&dp0_in_vp0 {
+	status = "okay";
+};
+
+&dp0_in_vp1 {
+	status = "disabled";
+};
+
+&dp0_in_vp2 {
+	status = "disabled";
+};
+
+&dp1_in_vp0 {
+	status = "disabled";
+};
+
+&dp1_in_vp1 {
+	status = "disabled";
+};
+
+&dp1_in_vp2 {
+	status = "okay";
+};
+
+&edp0_in_vp0 {
+	status = "disabled";
+};
+
+&edp0_in_vp1 {
+	status = "okay";
+};
+
+&edp0_in_vp2 {
+	status = "disabled";
+};
+
+&hdmi1_in_vp0 {
+	status = "okay";
+};
+
+&hdmi1_in_vp1 {
+	status = "disabled";
+};
+
+&hdmi1_in_vp2 {
+	status = "disabled";
+};
+
+&dsi0_in_vp2 {
+	status = "okay";
+};
+
+&dsi0_in_vp3 {
+	status = "disabled";
+};
+
+&dsi1_in_vp2 {
+	status = "disabled";
+};
+
+&dsi1_in_vp3 {
+	status = "okay";
+};
+
+&vop {
+	status = "okay";
+};
+
+&vop_mmu {
+	status = "okay";
+};
+
+/* vp0 & vp1 splice for 8K output */
+&vp0 {
+	rockchip,plane-mask = <(1 << ROCKCHIP_VOP2_CLUSTER0 | 1 << ROCKCHIP_VOP2_ESMART0)>;
+	rockchip,primary-plane = <ROCKCHIP_VOP2_CLUSTER0>;
+	cursor-win-id = <ROCKCHIP_VOP2_ESMART0>;
+};
+
+&vp1 {
+	rockchip,plane-mask = <(1 << ROCKCHIP_VOP2_CLUSTER1 | 1 << ROCKCHIP_VOP2_ESMART1)>;
+	rockchip,primary-plane = <ROCKCHIP_VOP2_CLUSTER1>;
+	cursor-win-id = <ROCKCHIP_VOP2_ESMART1>;
+};
+
+&vp2 {
+	rockchip,plane-mask = <(1 << ROCKCHIP_VOP2_CLUSTER2 | 1 << ROCKCHIP_VOP2_ESMART2)>;
+	rockchip,primary-plane = <ROCKCHIP_VOP2_CLUSTER2>;
+	cursor-win-id = <ROCKCHIP_VOP2_ESMART2>;
+};
+
+&vp3 {
+	rockchip,plane-mask = <(1 << ROCKCHIP_VOP2_CLUSTER3 | 1 << ROCKCHIP_VOP2_ESMART3)>;
+	rockchip,primary-plane = <ROCKCHIP_VOP2_CLUSTER3>;
+	cursor-win-id = <ROCKCHIP_VOP2_ESMART3>;
+};
