@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 /*
- * Copyright (c) 2022 Rockchip Electronics Co., Ltd.
- * Copyright (c) 2022 Radxa Limited
+ * Copyright (c) 2023 Rockchip Electronics Co., Ltd.
+ * Copyright (c) 2023 Radxa Limited
  *
  */
 
 /dts-v1/;
 
-#include "rk3588s-radxa-cm5-module.dtsi"
+#include "rk3588s-radxa-cm5.dtsi"
 
 / {
 	model = "Radxa CM5 IO";
-	compatible = "radxa,cm5-io", "rockchip,rk3588";
+	compatible = "radxa,cm5-io", "radxa,cm5", "rockchip,rk3588";
 
 	/delete-node/ chosen;
 
