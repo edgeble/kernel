@@ -8,7 +8,7 @@
 
 #include "rv1126.dtsi"
 #include "ecm0-radxa-10p1inch-display.dtsi"
-#include "rv1126-ecm0-dual-cameras-gc2053-gc2093.dtsi"
+#include "rv1126-ecm0-dual-cameras-gc2053.dtsi"
 
 / {
 	model = "Edgeble AI Edge Compute Module 0 Carrier board";
@@ -26,6 +26,16 @@
 		regulator-boot-on;
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
+	};
+
+	vcc_3v3_sys: vcc-3v3-sys {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_3v3_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&vcc5v0_sys>;
 	};
 
 	vcc5v0_host: vcc5v0-host-regulator {
@@ -52,6 +62,27 @@
 		regulator-settling-time-up-us = <250>;
 		pwm-supply = <&vcc5v0_sys>;
 		status = "disabled";
+	};
+
+	rk809_sound: rk809-sound {
+		compatible = "simple-audio-card";
+		simple-audio-card,format = "i2s";
+		simple-audio-card,name = "rockchip,rk809-codec";
+		simple-audio-card,mclk-fs = <256>;
+		simple-audio-card,widgets =
+			"Microphone", "Mic Jack",
+			"Headphone", "Headphone Jack";
+		simple-audio-card,routing =
+			"Mic Jack", "MICBIAS1",
+			"IN1P", "Mic Jack",
+			"Headphone Jack", "HPOL",
+			"Headphone Jack", "HPOR";
+		simple-audio-card,cpu {
+			sound-dai = <&i2s0_8ch>;
+		};
+		simple-audio-card,codec {
+			sound-dai = <&rk809_codec>;
+		};
 	};
 
 	sdio_pwrseq: sdio-pwrseq {
@@ -90,16 +121,6 @@
 		wifi_chip_type = "ap6255";
 		WIFI,host_wake_irq = <&gpio1 RK_PD1 GPIO_ACTIVE_HIGH>;
 		status = "okay";
-	};
-
-	vcc_3v3_sys: vcc-3v3-sys {
-		compatible = "regulator-fixed";
-		regulator-name = "vcc_3v3_sys";
-		regulator-always-on;
-		regulator-boot-on;
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		vin-supply = <&vcc5v0_sys>;
 	};
 };
 
@@ -353,7 +374,48 @@
 				regulator-name = "vcc_3v3";
 			};
 		};
+
+		rk809_codec: codec {
+			#sound-dai-cells = <0>;
+			compatible = "rockchip,rk809-codec", "rockchip,rk817-codec";
+			clocks = <&cru MCLK_I2S0_TX_OUT2IO>;
+			clock-names = "mclk";
+			pinctrl-names = "default";
+			assigned-clocks = <&cru MCLK_I2S0_TX_OUT2IO>;
+			assigned-clock-parents = <&cru MCLK_I2S0_TX>;
+			pinctrl-0 = <&i2s0m0_mclk>;
+			hp-volume = <20>;
+			spk-volume = <3>;
+		};
 	};
+};
+
+&i2c2 {
+	status = "okay";
+
+	/* RTC */
+	hym8563: hym8563@51 {
+		compatible = "haoyu,hym8563";
+		reg = <0x51>;
+		#clock-cells = <0>;
+		clock-frequency = <32768>;
+		clock-output-names = "hym8563";
+	};
+};
+
+&i2s0_8ch {
+	status = "okay";
+	#sound-dai-cells = <0>;
+	rockchip,clk-trcm = <1>;
+	rockchip,i2s-rx-route = <3 1 2 0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2s0m0_sclk_tx
+		     &i2s0m0_sclk_rx
+		     &i2s0m0_lrck_tx
+		     &i2s0m0_lrck_rx
+		     &i2s0m0_sdo0
+		     &i2s0m0_sdi0
+		     &i2s0m0_sdo1_sdi3>;
 };
 
 &cpu0 {
@@ -512,6 +574,11 @@
 	};
 };
 
+/* FAN */
+&pwm11 {
+	status = "okay";
+};
+
 &sdmmc {
 	bus-width = <4>;
 	cap-mmc-highspeed;
@@ -543,5 +610,26 @@
 &uart0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart0_xfer &uart0_ctsn>;
+	status = "okay";
+};
+
+/* RS232 */
+&uart3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart3m0_xfer>;
+	status = "okay";
+};
+
+/* RS485 */
+&uart5 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart5m2_xfer>;
+	status = "okay";
+};
+
+/* CAN */
+&can {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart3m2_xfer>;
 	status = "okay";
 };
