@@ -138,7 +138,7 @@ static int parse_one_domain(struct tpmi_rapl_package *trp, u32 offset)
 	enum tpmi_rapl_register reg_index;
 	enum rapl_domain_reg_id reg_id;
 	int tpmi_domain_size, tpmi_domain_flags;
-	u64 *tpmi_rapl_regs = trp->base + offset;
+	u64 *tpmi_rapl_regs = (u64 *)(trp->base + offset);
 	u64 tpmi_domain_header = readq((void __iomem *)tpmi_rapl_regs);
 
 	/* Domain Parent bits are ignored for now */
