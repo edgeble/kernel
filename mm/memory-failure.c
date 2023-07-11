@@ -2186,8 +2186,6 @@ try_again:
 		goto unlock_mutex;
 	}
 
-	hpage = compound_head(p);
-
 	/*
 	 * We need/can do nothing about count=0 pages.
 	 * 1) it's a free page, and therefore in safe hand:
@@ -2226,6 +2224,7 @@ try_again:
 		}
 	}
 
+	hpage = compound_head(p);
 	if (PageTransHuge(hpage)) {
 		/*
 		 * The flag must be set after the refcount is bumped
