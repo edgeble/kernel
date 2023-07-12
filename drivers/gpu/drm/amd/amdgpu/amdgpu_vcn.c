@@ -521,6 +521,7 @@ static int amdgpu_vcn_dec_send_msg(struct amdgpu_ring *ring,
 				   struct dma_fence **fence)
 {
 	u64 addr = AMDGPU_GPU_PAGE_ALIGN(ib_msg->gpu_addr);
+	uint64_t session_ctx_buf_gaddr = AMDGPU_GPU_PAGE_ALIGN(ib_msg->gpu_addr + 8192);
 	struct amdgpu_device *adev = ring->adev;
 	struct dma_fence *f = NULL;
 	struct amdgpu_job *job;
@@ -534,13 +535,23 @@ static int amdgpu_vcn_dec_send_msg(struct amdgpu_ring *ring,
 		goto err;
 
 	ib = &job->ibs[0];
-	ib->ptr[0] = PACKET0(adev->vcn.internal.data0, 0);
-	ib->ptr[1] = addr;
-	ib->ptr[2] = PACKET0(adev->vcn.internal.data1, 0);
-	ib->ptr[3] = addr >> 32;
-	ib->ptr[4] = PACKET0(adev->vcn.internal.cmd, 0);
-	ib->ptr[5] = 0;
-	for (i = 6; i < 16; i += 2) {
+	ib->length_dw = 0;
+	ib->ptr[ib->length_dw++] = PACKET0(adev->vcn.internal.data0, 0);
+	ib->ptr[ib->length_dw++] = lower_32_bits(session_ctx_buf_gaddr);
+	ib->ptr[ib->length_dw++] = PACKET0(adev->vcn.internal.data1, 0);
+	ib->ptr[ib->length_dw++] = upper_32_bits(session_ctx_buf_gaddr);
+	/* session ctx buffer cmd */
+	ib->ptr[ib->length_dw++] = PACKET0(adev->vcn.internal.cmd, 0);
+	ib->ptr[ib->length_dw++] = 0xa;
+
+	ib->ptr[ib->length_dw++] = PACKET0(adev->vcn.internal.data0, 0);
+	ib->ptr[ib->length_dw++] = lower_32_bits(addr);
+	ib->ptr[ib->length_dw++] = PACKET0(adev->vcn.internal.data1, 0);
+	ib->ptr[ib->length_dw++] = upper_32_bits(addr);
+	ib->ptr[ib->length_dw++] = PACKET0(adev->vcn.internal.cmd, 0);
+	ib->ptr[ib->length_dw++] = 0;
+
+	for (i = ib->length_dw; i < 16; i += 2) {
 		ib->ptr[i] = PACKET0(adev->vcn.internal.nop, 0);
 		ib->ptr[i+1] = 0;
 	}
@@ -573,13 +584,15 @@ static int amdgpu_vcn_dec_get_create_msg(struct amdgpu_ring *ring, uint32_t hand
 	int r, i;
 
 	memset(ib, 0, sizeof(*ib));
-	r = amdgpu_ib_get(adev, NULL, AMDGPU_GPU_PAGE_SIZE * 2,
+	/* 34 pages : 128KiB  session context buffer size and 8KiB ib msg */
+	r = amdgpu_ib_get(adev, NULL, AMDGPU_GPU_PAGE_SIZE * 34,
 			AMDGPU_IB_POOL_DIRECT,
 			ib);
 	if (r)
 		return r;
 
 	msg = (uint32_t *)AMDGPU_GPU_PAGE_ALIGN((unsigned long)ib->ptr);
+	memset(msg, 0, (AMDGPU_GPU_PAGE_SIZE * 34));
 	msg[0] = cpu_to_le32(0x00000028);
 	msg[1] = cpu_to_le32(0x00000038);
 	msg[2] = cpu_to_le32(0x00000001);
@@ -608,13 +621,15 @@ static int amdgpu_vcn_dec_get_destroy_msg(struct amdgpu_ring *ring, uint32_t han
 	int r, i;
 
 	memset(ib, 0, sizeof(*ib));
-	r = amdgpu_ib_get(adev, NULL, AMDGPU_GPU_PAGE_SIZE * 2,
+	/* 34 pages : 128KiB  session context buffer size and 8KiB ib msg */
+	r = amdgpu_ib_get(adev, NULL, AMDGPU_GPU_PAGE_SIZE * 34,
 			AMDGPU_IB_POOL_DIRECT,
 			ib);
 	if (r)
 		return r;
 
 	msg = (uint32_t *)AMDGPU_GPU_PAGE_ALIGN((unsigned long)ib->ptr);
+	memset(msg, 0, (AMDGPU_GPU_PAGE_SIZE * 34));
 	msg[0] = cpu_to_le32(0x00000028);
 	msg[1] = cpu_to_le32(0x00000018);
 	msg[2] = cpu_to_le32(0x00000000);
@@ -700,6 +715,7 @@ static int amdgpu_vcn_dec_sw_send_msg(struct amdgpu_ring *ring,
 	struct amdgpu_job *job;
 	struct amdgpu_ib *ib;
 	uint64_t addr = AMDGPU_GPU_PAGE_ALIGN(ib_msg->gpu_addr);
+	uint64_t session_ctx_buf_gaddr = AMDGPU_GPU_PAGE_ALIGN(ib_msg->gpu_addr + 8192);
 	bool sq = amdgpu_vcn_using_unified_queue(ring);
 	uint32_t *ib_checksum;
 	uint32_t ib_pack_in_dw;
@@ -730,6 +746,10 @@ static int amdgpu_vcn_dec_sw_send_msg(struct amdgpu_ring *ring,
 	ib->length_dw += sizeof(struct amdgpu_vcn_decode_buffer) / 4;
 	memset(decode_buffer, 0, sizeof(struct amdgpu_vcn_decode_buffer));
 
+	decode_buffer->valid_buf_flag |=
+				cpu_to_le32(AMDGPU_VCN_CMD_FLAG_SESSION_CONTEXT_BUFFER);
+	decode_buffer->session_context_buffer_address_hi = upper_32_bits(session_ctx_buf_gaddr);
+	decode_buffer->session_context_buffer_address_lo = lower_32_bits(session_ctx_buf_gaddr);
 	decode_buffer->valid_buf_flag |= cpu_to_le32(AMDGPU_VCN_CMD_FLAG_MSG_BUFFER);
 	decode_buffer->msg_buffer_address_hi = cpu_to_le32(addr >> 32);
 	decode_buffer->msg_buffer_address_lo = cpu_to_le32(addr);
@@ -1238,4 +1258,19 @@ int amdgpu_vcn_ras_sw_init(struct amdgpu_device *adev)
 		ras->ras_block.ras_late_init = amdgpu_vcn_ras_late_init;
 
 	return 0;
+}
+
+int amdgpu_vcn_psp_update_sram(struct amdgpu_device *adev, int inst_idx,
+			       enum AMDGPU_UCODE_ID ucode_id)
+{
+	struct amdgpu_firmware_info ucode = {
+		.ucode_id = (ucode_id ? ucode_id :
+			    (inst_idx ? AMDGPU_UCODE_ID_VCN1_RAM :
+					AMDGPU_UCODE_ID_VCN0_RAM)),
+		.mc_addr = adev->vcn.inst[inst_idx].dpg_sram_gpu_addr,
+		.ucode_size = ((uintptr_t)adev->vcn.inst[inst_idx].dpg_sram_curr_addr -
+			      (uintptr_t)adev->vcn.inst[inst_idx].dpg_sram_cpu_addr),
+	};
+
+	return psp_execute_ip_fw_load(&adev->psp, &ucode);
 }

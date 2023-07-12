@@ -171,6 +171,7 @@
 
 #define AMDGPU_VCN_IB_FLAG_DECODE_BUFFER	0x00000001
 #define AMDGPU_VCN_CMD_FLAG_MSG_BUFFER		0x00000001
+#define AMDGPU_VCN_CMD_FLAG_SESSION_CONTEXT_BUFFER	0x00100000
 
 #define VCN_CODEC_DISABLE_MASK_AV1  (1 << 0)
 #define VCN_CODEC_DISABLE_MASK_VP9  (1 << 1)
@@ -366,7 +367,9 @@ struct amdgpu_vcn_decode_buffer {
 	uint32_t valid_buf_flag;
 	uint32_t msg_buffer_address_hi;
 	uint32_t msg_buffer_address_lo;
-	uint32_t pad[30];
+	uint32_t session_context_buffer_address_hi;
+	uint32_t session_context_buffer_address_lo;
+	uint32_t pad[28];
 };
 
 #define VCN_BLOCK_ENCODE_DISABLE_MASK 0x80
@@ -413,5 +416,8 @@ int amdgpu_vcn_process_poison_irq(struct amdgpu_device *adev,
 int amdgpu_vcn_ras_late_init(struct amdgpu_device *adev,
 			struct ras_common_if *ras_block);
 int amdgpu_vcn_ras_sw_init(struct amdgpu_device *adev);
+
+int amdgpu_vcn_psp_update_sram(struct amdgpu_device *adev, int inst_idx,
+			       enum AMDGPU_UCODE_ID ucode_id);
 
 #endif
