@@ -29,6 +29,19 @@
 		startup-delay-us = <5000>;
 		vin-supply = <&vcc_3v3_s3>;
 	};
+
+	vcc3v3_pcie2x1l1: vcc3v3-pcie2x1l1-regulator {
+		compatible = "regulator-fixed";
+		enable-active-high;
+		gpios = <&gpio0 RK_PC4 GPIO_ACTIVE_HIGH>; /* WIFI_3V3_EN */
+		regulator-name = "vcc3v3_pcie2x1l1";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		startup-delay-us = <50000>;
+		vin-supply = <&vcc5v0_sys>;
+	};
 };
 
 &combphy0_ps {
@@ -36,6 +49,10 @@
 };
 
 &combphy1_ps {
+	status = "okay";
+};
+
+&combphy2_psu {
 	status = "okay";
 };
 
@@ -67,6 +84,13 @@
 &pcie2x1l0 {
 	reset-gpios = <&gpio4 RK_PA5 GPIO_ACTIVE_HIGH>; /* PCIE20_1_PERST_L */
 	vpcie3v3-supply = <&vcc3v3_pcie2x1l0>;
+	status = "okay";
+};
+
+/* WiFi6 */
+&pcie2x1l1 {
+	reset-gpios = <&gpio4 RK_PA2 GPIO_ACTIVE_HIGH>; /* PCIE20_2_WIFI_PERSTn */
+	vpcie3v3-supply = <&vcc3v3_pcie2x1l1>;
 	status = "okay";
 };
 
