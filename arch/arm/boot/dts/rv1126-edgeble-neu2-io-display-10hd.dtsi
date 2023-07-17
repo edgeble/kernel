@@ -24,6 +24,18 @@
 		};
 	};
 
+	vcc_tp: vcc-tp {
+		status = "okay";
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_cp";
+		gpio = <&gpio3 RK_PC4 GPIO_ACTIVE_LOW>;
+		enable-active-low;
+		regulator-boot-on;
+		regulator-state-mem {
+			regulator-off-in-suspend;
+		};
+	};
+
 	dsi_backlight: dsi-backlight {
 		status = "okay";
 		compatible = "pwm-backlight";
@@ -360,6 +372,26 @@
 	status = "okay";
 };
 
+&i2c2 {
+	status = "okay";
+
+	focaltech: focaltech@38 {
+		compatible = "focaltech,fts";
+		reg = <0x38>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&touch_gpio>;
+		power-supply = <&vcc_tp>;
+		focaltech,irq-gpio = <&gpio3 RK_PC1 IRQ_TYPE_LEVEL_LOW>;
+		focaltech,reset-gpio = <&gpio3 RK_PC2 GPIO_ACTIVE_HIGH>;
+		focaltech,have-key = <0>;
+		focaltech,key-number = <3>;
+		focaltech,keys = <256 1068 64 64 128 1068 64 64 192 1068 64 64>;
+		focaltech,key-x-coord = <800>;
+		focaltech,key-y-coord = <1280>;
+		focaltech,max-touch-number = <5>;
+	};
+};
+
 &mipi_dphy {
 	status = "okay";
 };
@@ -387,4 +419,13 @@
 			rockchip,pins = <2 RK_PD6 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
 	};
+
+	touch {
+		touch_gpio: touch-gpio {
+		    rockchip,pins =
+			<3 RK_PC2 RK_FUNC_GPIO &pcfg_pull_up>,
+			<3 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
 };
