@@ -7,7 +7,6 @@
 /dts-v1/;
 
 #include "rv1126.dtsi"
-#include "ecm0-radxa-10p1inch-display.dtsi"
 
 / {
 	model = "Edgeble Neu2A-IO";
@@ -631,3 +630,5 @@
 	pinctrl-0 = <&uart3m2_xfer>;
 	status = "okay";
 };
+
+#include "rv1126-edgeble-neu2-io-display-10hd.dtsi"
