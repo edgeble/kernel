@@ -848,6 +848,23 @@ static void smsc95xx_init_mac_address(struct usbnet *dev)
 	if (smsc95xx_is_macaddr_param(dev, dev->net->dev_addr))
 		return;
 
+#if defined(__arm64__) || defined(__aarch64__)
+	/* Generate a MAC address from system serial */
+	if (system_serial_low != 0 && system_serial_high != 0) {
+		*((u32 *) &dev->net->dev_addr[MAC_ADDR_LEN - sizeof(u32)]) =
+			crc32(system_serial_high, &system_serial_low, sizeof(system_serial_low));
+		// Prefix with Microchip Technology Inc's vendor ID
+		dev->net->dev_addr[0] = 0;
+		dev->net->dev_addr[1] = 4;
+		dev->net->dev_addr[2] = 0xa3;
+		netif_dbg(dev, ifup, dev->net, "Generate MAC address from CPU serial: "
+			"%02x:%02x:%02x:%02x:%02x:%02x\n",
+				dev->net->dev_addr[0], dev->net->dev_addr[1], dev->net->dev_addr[2],
+				dev->net->dev_addr[3], dev->net->dev_addr[4], dev->net->dev_addr[5]);
+		return;
+	}
+#endif
+
 	/* no useful static MAC address found. generate a random one */
 	eth_hw_addr_random(dev->net);
 	netif_dbg(dev, ifup, dev->net, "MAC address set to eth_random_addr\n");
