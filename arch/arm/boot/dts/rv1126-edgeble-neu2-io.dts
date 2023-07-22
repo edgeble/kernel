@@ -415,6 +415,10 @@
 		     &i2s0m0_sdo1_sdi3>;
 };
 
+&otp {
+	status = "okay";
+};
+
 &cpu0 {
 	cpu-supply = <&vdd_arm>;
 };
