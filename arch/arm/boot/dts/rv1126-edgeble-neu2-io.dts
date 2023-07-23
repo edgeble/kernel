@@ -631,7 +631,7 @@
 /* CAN */
 &can {
 	pinctrl-names = "default";
-	pinctrl-0 = <&uart3m2_xfer>;
+	pinctrl-0 = <&canm0_pins>;
 	status = "okay";
 };
 
