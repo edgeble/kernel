@@ -17,7 +17,7 @@
 #include "rk3568-linux.dtsi"
 
 / {
-	compatible = "radxa,rock-3-compute-module", "rockchip,rk3566";
+	compatible = "radxa,cm3", "rockchip,rk3566";
 
 	/delete-node/ chosen;
 
