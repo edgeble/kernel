@@ -606,3 +606,5 @@
 	pinctrl-0 = <&uart7m2_xfer>;
 	status = "okay";
 };
+
+#include "rk3588-edgeble-neu6b-io-dp0-dp1-hdmi1-dsi0.dtsi"
