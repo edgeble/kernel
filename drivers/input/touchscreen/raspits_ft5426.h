@@ -61,4 +61,3 @@ struct raspits_ft5426_data {
 };
 
 #endif
-

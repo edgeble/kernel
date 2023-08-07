@@ -98,7 +98,7 @@ brcmf_fil_cmd_data(struct brcmf_if *ifp, u32 cmd, void *data, u32 len, bool set)
 	struct brcmf_pub *drvr = ifp->drvr;
 	s32 err, fwerr;
 #ifdef CONFIG_BRCMF_CMD_TIMEOUT_REBOOT
-	int retries = 0;
+    int retries = 0;
 #endif /* CONFIG_BRCMF_CMD_TIMEOUT_REBOOT */
 
 	if (drvr->bus_if->state != BRCMF_BUS_UP) {
@@ -130,7 +130,7 @@ retry:
                 goto retry;
             } else {
                 brcmf_bus_handle_cmd_timeout(drvr->bus_if);
-            }
+            }        
         }
 #endif /* CONFIG_BRCMF_CMD_TIMEOUT_REBOOT */
 	} else if (fwerr < 0) {

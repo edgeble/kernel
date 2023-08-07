@@ -23,28 +23,19 @@
 
 #include "mali_kbase_ipa_counter_common_jm.h"
 #include "mali_kbase.h"
-
-#if IS_ENABLED(CONFIG_MALI_BIFROST_NO_MALI)
-#include <backend/gpu/mali_kbase_model_dummy.h>
-#endif /* CONFIG_MALI_BIFROST_NO_MALI */
+#include <backend/gpu/mali_kbase_model_linux.h>
 
 /* Performance counter blocks base offsets */
 #define JM_BASE             (0 * KBASE_IPA_NR_BYTES_PER_BLOCK)
-#define TILER_BASE          (1 * KBASE_IPA_NR_BYTES_PER_BLOCK)
 #define MEMSYS_BASE         (2 * KBASE_IPA_NR_BYTES_PER_BLOCK)
 
 /* JM counter block offsets */
 #define JM_GPU_ACTIVE (KBASE_IPA_NR_BYTES_PER_CNT *  6)
 
-/* Tiler counter block offsets */
-#define TILER_ACTIVE (KBASE_IPA_NR_BYTES_PER_CNT * 45)
-
 /* MEMSYS counter block offsets */
 #define MEMSYS_L2_ANY_LOOKUP (KBASE_IPA_NR_BYTES_PER_CNT * 25)
 
 /* SC counter block offsets */
-#define SC_FRAG_ACTIVE             (KBASE_IPA_NR_BYTES_PER_CNT *  4)
-#define SC_EXEC_CORE_ACTIVE        (KBASE_IPA_NR_BYTES_PER_CNT * 26)
 #define SC_EXEC_INSTR_FMA          (KBASE_IPA_NR_BYTES_PER_CNT * 27)
 #define SC_EXEC_INSTR_COUNT        (KBASE_IPA_NR_BYTES_PER_CNT * 28)
 #define SC_EXEC_INSTR_MSG          (KBASE_IPA_NR_BYTES_PER_CNT * 30)
@@ -52,10 +43,6 @@
 #define SC_TEX_COORD_ISSUE         (KBASE_IPA_NR_BYTES_PER_CNT * 40)
 #define SC_TEX_TFCH_NUM_OPERATIONS (KBASE_IPA_NR_BYTES_PER_CNT * 42)
 #define SC_VARY_INSTR              (KBASE_IPA_NR_BYTES_PER_CNT * 49)
-#define SC_VARY_SLOT_32            (KBASE_IPA_NR_BYTES_PER_CNT * 50)
-#define SC_VARY_SLOT_16            (KBASE_IPA_NR_BYTES_PER_CNT * 51)
-#define SC_BEATS_RD_LSC            (KBASE_IPA_NR_BYTES_PER_CNT * 56)
-#define SC_BEATS_WR_LSC            (KBASE_IPA_NR_BYTES_PER_CNT * 61)
 #define SC_BEATS_WR_TIB            (KBASE_IPA_NR_BYTES_PER_CNT * 62)
 
 /**

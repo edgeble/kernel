@@ -42,8 +42,8 @@
 #include <tl/mali_kbase_timeline.h>
 #include "mali_kbase_kinstr_prfcnt.h"
 #include "mali_kbase_vinstr.h"
-#include "mali_kbase_hwcnt_context.h"
-#include "mali_kbase_hwcnt_virtualizer.h"
+#include "hwcnt/mali_kbase_hwcnt_context.h"
+#include "hwcnt/mali_kbase_hwcnt_virtualizer.h"
 
 #include "mali_kbase_device.h"
 #include "mali_kbase_device_internal.h"
@@ -56,16 +56,14 @@
 #include "arbiter/mali_kbase_arbiter_pm.h"
 #endif /* CONFIG_MALI_ARBITER_SUPPORT */
 
-/* NOTE: Magic - 0x45435254 (TRCE in ASCII).
- * Supports tracing feature provided in the base module.
- * Please keep it in sync with the value of base module.
- */
-#define TRACE_BUFFER_HEADER_SPECIAL 0x45435254
+#if defined(CONFIG_DEBUG_FS) && !IS_ENABLED(CONFIG_MALI_BIFROST_NO_MALI)
 
 /* Number of register accesses for the buffer that we allocate during
  * initialization time. The buffer size can be changed later via debugfs.
  */
 #define KBASEP_DEFAULT_REGISTER_HISTORY_SIZE ((u16)512)
+
+#endif /* defined(CONFIG_DEBUG_FS) && !IS_ENABLED(CONFIG_MALI_BIFROST_NO_MALI) */
 
 static DEFINE_MUTEX(kbase_dev_list_lock);
 static LIST_HEAD(kbase_dev_list);
@@ -330,6 +328,9 @@ int kbase_device_misc_init(struct kbase_device * const kbdev)
 	kbdev->num_of_atoms_hw_completed = 0;
 #endif
 
+#if MALI_USE_CSF && IS_ENABLED(CONFIG_SYNC_FILE)
+	atomic_set(&kbdev->live_fence_metadata, 0);
+#endif
 	return 0;
 
 term_as:
@@ -353,6 +354,11 @@ void kbase_device_misc_term(struct kbase_device *kbdev)
 
 	if (kbdev->oom_notifier_block.notifier_call)
 		unregister_oom_notifier(&kbdev->oom_notifier_block);
+
+#if MALI_USE_CSF && IS_ENABLED(CONFIG_SYNC_FILE)
+	if (atomic_read(&kbdev->live_fence_metadata) > 0)
+		dev_warn(kbdev->dev, "Terminating Kbase device with live fence metadata!");
+#endif
 }
 
 #if !MALI_USE_CSF
@@ -443,7 +449,6 @@ void kbase_device_vinstr_term(struct kbase_device *kbdev)
 	kbase_vinstr_term(kbdev->vinstr_ctx);
 }
 
-#if defined(CONFIG_DEBUG_FS) && !IS_ENABLED(CONFIG_MALI_BIFROST_NO_MALI)
 int kbase_device_kinstr_prfcnt_init(struct kbase_device *kbdev)
 {
 	return kbase_kinstr_prfcnt_init(kbdev->hwcnt_gpu_virt,
@@ -465,7 +470,6 @@ void kbase_device_io_history_term(struct kbase_device *kbdev)
 {
 	kbase_io_history_term(&kbdev->io_history);
 }
-#endif
 
 int kbase_device_misc_register(struct kbase_device *kbdev)
 {

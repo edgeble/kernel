@@ -537,7 +537,10 @@ static __maybe_unused __init int rk3588_dfi_init(struct platform_device *pdev,
 		data->dram_type = READ_DRAMTYPE_INFO(val_2);
 
 	data->mon_idx = 0x4000;
-	data->count_rate = 2;
+	if (data->dram_type == LPDDR5)
+		data->count_rate = 1;
+	else
+		data->count_rate = 2;
 	data->dram_dynamic_info_reg = RK3588_PMUGRF_OS_REG(6);
 	data->ch_msk = READ_CH_INFO(val_2) | READ_CH_INFO(val_4) << 2;
 	data->clk = NULL;
@@ -741,6 +744,9 @@ static const struct of_device_id rockchip_dfi_id_match[] = {
 #endif
 #ifdef CONFIG_CPU_RK3399
 	{ .compatible = "rockchip,rk3399-dfi", .data = rockchip_dfi_init },
+#endif
+#ifdef CONFIG_CPU_RK3562
+	{ .compatible = "rockchip,rk3562-dfi", .data = px30_dfi_init },
 #endif
 #ifdef CONFIG_CPU_RK3568
 	{ .compatible = "rockchip,rk3568-dfi", .data = px30_dfi_init },

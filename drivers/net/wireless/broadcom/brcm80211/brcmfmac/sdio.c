@@ -644,7 +644,7 @@ CY_FW_DEF(43362, "cyfmac43362-sdio");
 CY_FW_DEF(4339, "cyfmac4339-sdio");
 BRCMF_FW_DEF(43430A0, "brcmfmac43430a0-sdio");
 /* Note the names are not postfixed with a1 for backward compatibility */
-CY_FW_DEF(43430A1, "cyfmac43430-sdio");
+BRCMF_FW_DEF(43430A1, "brcmfmac43430-sdio");
 CY_FW_DEF(43439, "cyfmac43439-sdio");
 CY_FW_DEF(43455, "cyfmac43455-sdio");
 BRCMF_FW_DEF(43456, "brcmfmac43456-sdio");
@@ -3014,18 +3014,18 @@ static void brcmf_sdio_dpc(struct brcmf_sdio *bus)
 			sdio_release_host(bus->sdiodev->func1);
 		}
 	} else {
-		sdio_claim_host(bus->sdiodev->func1);
-		err = brcmf_sdio_intr_rstatus(bus);
-		sdio_release_host(bus->sdiodev->func1);
+        sdio_claim_host(bus->sdiodev->func1);
+        err = brcmf_sdio_intr_rstatus(bus);
+        sdio_release_host(bus->sdiodev->func1);
 
-		if (atomic_read(&bus->intstatus) ||
-		    atomic_read(&bus->ipend) > 0 ||
-		    (!atomic_read(&bus->fcstate) &&
+	    if (atomic_read(&bus->intstatus) ||
+		   atomic_read(&bus->ipend) > 0 ||
+		   (!atomic_read(&bus->fcstate) &&
 		    brcmu_pktq_mlen(&bus->txq, ~bus->flowcontrol) &&
 		    data_ok(bus))) {
-			bus->dpc_triggered = true;
-		}
-	}
+            bus->dpc_triggered = true;
+	    }
+    }
 }
 
 static struct pktq *brcmf_sdio_bus_gettxq(struct device *dev)
@@ -4005,7 +4005,7 @@ static void brcmf_sdio_bus_watchdog(struct brcmf_sdio *bus)
 	brcmf_dbg(TIMER, "Enter\n");
 
 	/* Poll period: check device if appropriate. */
-	if (!bus->sr_enabled &&
+	if (!bus->sr_enabled && 
 	    bus->poll && (++bus->polltick >= bus->pollrate)) {
 		u32 intstatus = 0;
 

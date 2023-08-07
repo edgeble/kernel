@@ -422,7 +422,14 @@ static void rk_crypto_queue_task_cb(unsigned long data)
 static void rk_crypto_done_task_cb(unsigned long data)
 {
 	struct rk_crypto_dev *rk_dev = (struct rk_crypto_dev *)data;
-	struct rk_alg_ctx *alg_ctx = rk_alg_ctx_cast(rk_dev->async_req);
+	struct rk_alg_ctx *alg_ctx;
+
+	if (!rk_dev->async_req) {
+		dev_err(rk_dev->dev, "done task receive invalid async_req\n");
+		return;
+	}
+
+	alg_ctx = rk_alg_ctx_cast(rk_dev->async_req);
 
 	rk_dev->stat.done_cnt++;
 
@@ -663,6 +670,12 @@ static const struct rk_crypto_soc_data rk3288_soc_data =
 static const struct of_device_id crypto_of_id_table[] = {
 
 #if IS_ENABLED(CONFIG_CRYPTO_DEV_ROCKCHIP_V3)
+	/* crypto v4 in belows same with crypto-v3*/
+	{
+		.compatible = "rockchip,crypto-v4",
+		.data = (void *)&cryto_v3_soc_data,
+	},
+
 	/* crypto v3 in belows */
 	{
 		.compatible = "rockchip,crypto-v3",

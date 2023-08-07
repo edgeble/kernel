@@ -11,6 +11,15 @@ config RK803
 	help
 	  Driver for RK803 which is used for driving porjector and IR flood LED.
 
+source "drivers/misc/rockchip/Kconfig"
+
+config LT7911D_FB_NOTIFIER
+	tristate "Lontium LT7911D FB Notifier"
+	depends on FB
+	help
+	   Enable this configuration option to enable the FB notifier driver
+	   for Lontium LT7911D.
+
 config SENSORS_LIS3LV02D
 	tristate
 	depends on INPUT
@@ -486,6 +495,13 @@ config HISI_HIKEY_USB
 	  found on HiKey 960/970 boards, which is necessary to support
 	  switching between the dual-role USB-C port and the USB-A host ports
 	  using only one USB controller.
+
+config ROCKPI_MCU
+	tristate "rockpi mcu"
+	default n
+	depends on I2C
+	help
+	  Control the power of touch screen for rockpi board.
 
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"

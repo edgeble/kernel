@@ -264,6 +264,9 @@ static int jpgdec_run(struct mpp_dev *mpp,
 
 		mpp_write_req(mpp, task->reg, s, e, reg_en);
 	}
+	/* flush tlb before starting hardware */
+	mpp_iommu_flush_tlb(mpp->iommu_info);
+
 	/* init current task */
 	mpp->cur_task = mpp_task;
 
@@ -492,7 +495,7 @@ static int jpgdec_isr(struct mpp_dev *mpp)
 		dev_err(mpp->dev, "no current task\n");
 		return IRQ_HANDLED;
 	}
-	mpp_time_diff(mpp_task, 0);
+	mpp_time_diff(mpp_task);
 	mpp->cur_task = NULL;
 	task = to_jpgdec_task(mpp_task);
 	task->irq_status = mpp->irq_status;
@@ -555,7 +558,7 @@ static struct mpp_dev_ops jpgdec_v1_dev_ops = {
 };
 
 static const struct mpp_dev_var jpgdec_v1_data = {
-	.device_type = MPP_DEVICE_JPGDEC,
+	.device_type = MPP_DEVICE_RKJPEGD,
 	.hw_info = &jpgdec_v1_hw_info,
 	.trans_info = jpgdec_v1_trans,
 	.hw_ops = &jpgdec_v1_hw_ops,

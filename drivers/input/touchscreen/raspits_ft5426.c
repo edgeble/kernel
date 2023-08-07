@@ -291,7 +291,8 @@ static int raspits_ft5426_remove(struct i2c_client *client)
 
 static const struct i2c_device_id raspits_ft5426_id[] = {
 	{ "raspits_ft5426", 0 },
-	{ },
+	{ "rockpi_ft5406", 0},
+	{}
 };
 
 static struct i2c_driver raspits_ft5426_driver = {
@@ -306,4 +307,3 @@ module_i2c_driver(raspits_ft5426_driver);
 
 MODULE_DESCRIPTION("Raspberry Pi 7 inch Touchscreen FT5426 Touch driver");
 MODULE_LICENSE("GPL v2");
-

@@ -163,6 +163,8 @@
 #define CSG_PROTM_SUSPEND_BUF_HI 0x004C /* () Protected mode suspend buffer, high word */
 #define CSG_CONFIG 0x0050 /* () CSG configuration options */
 #define CSG_ITER_TRACE_CONFIG 0x0054 /* () CSG trace configuration */
+#define CSG_DVS_BUF_LO 0x0060 /* () Normal mode deferred vertex shading work buffer, low word */
+#define CSG_DVS_BUF_HI 0x0064 /* () Normal mode deferred vertex shading work buffer, high word */
 
 /* CSG_OUTPUT_BLOCK register offsets */
 #define CSG_ACK 0x0000 /* () CSG acknowledge flags */
@@ -227,21 +229,43 @@
 #define GLB_PRFCNT_TILER_EN 0x0058 /* () Performance counter enable for tiler */
 #define GLB_PRFCNT_MMU_L2_EN 0x005C /* () Performance counter enable for MMU/L2 cache */
 
-#define GLB_DEBUG_FWUTF_DESTROY 0x0FE0 /* () Test fixture destroy function address */
-#define GLB_DEBUG_FWUTF_TEST 0x0FE4 /* () Test index */
-#define GLB_DEBUG_FWUTF_FIXTURE 0x0FE8 /* () Test fixture index */
-#define GLB_DEBUG_FWUTF_CREATE 0x0FEC /* () Test fixture create function address */
+#define GLB_DEBUG_ARG_IN0 0x0FE0 /* Firmware Debug argument array element 0 */
+#define GLB_DEBUG_ARG_IN1 0x0FE4 /* Firmware Debug argument array element 1 */
+#define GLB_DEBUG_ARG_IN2 0x0FE8 /* Firmware Debug argument array element 2 */
+#define GLB_DEBUG_ARG_IN3 0x0FEC /* Firmware Debug argument array element 3 */
+
+/* Mappings based on GLB_DEBUG_REQ.FWUTF_RUN bit being different from GLB_DEBUG_ACK.FWUTF_RUN */
+#define GLB_DEBUG_FWUTF_DESTROY GLB_DEBUG_ARG_IN0 /* () Test fixture destroy function address */
+#define GLB_DEBUG_FWUTF_TEST GLB_DEBUG_ARG_IN1 /* () Test index */
+#define GLB_DEBUG_FWUTF_FIXTURE GLB_DEBUG_ARG_IN2 /* () Test fixture index */
+#define GLB_DEBUG_FWUTF_CREATE GLB_DEBUG_ARG_IN3 /* () Test fixture create function address */
+
 #define GLB_DEBUG_ACK_IRQ_MASK 0x0FF8 /* () Global debug acknowledge interrupt mask */
 #define GLB_DEBUG_REQ 0x0FFC /* () Global debug request */
 
 /* GLB_OUTPUT_BLOCK register offsets */
+#define GLB_DEBUG_ARG_OUT0 0x0FE0 /* Firmware debug result element 0 */
+#define GLB_DEBUG_ARG_OUT1 0x0FE4 /* Firmware debug result element 1 */
+#define GLB_DEBUG_ARG_OUT2 0x0FE8 /* Firmware debug result element 2 */
+#define GLB_DEBUG_ARG_OUT3 0x0FEC /* Firmware debug result element 3 */
+
 #define GLB_ACK 0x0000 /* () Global acknowledge */
 #define GLB_DB_ACK 0x0008 /* () Global doorbell acknowledge */
 #define GLB_HALT_STATUS 0x0010 /* () Global halt status */
 #define GLB_PRFCNT_STATUS 0x0014 /* () Performance counter status */
 #define GLB_PRFCNT_INSERT 0x0018 /* () Performance counter buffer insert index */
-#define GLB_DEBUG_FWUTF_RESULT 0x0FE0 /* () Firmware debug test result */
+#define GLB_DEBUG_FWUTF_RESULT GLB_DEBUG_ARG_OUT0 /* () Firmware debug test result */
 #define GLB_DEBUG_ACK 0x0FFC /* () Global debug acknowledge */
+
+#ifdef CONFIG_MALI_CORESIGHT
+#define GLB_DEBUG_REQ_FW_AS_WRITE_SHIFT 4
+#define GLB_DEBUG_REQ_FW_AS_WRITE_MASK (0x1 << GLB_DEBUG_REQ_FW_AS_WRITE_SHIFT)
+#define GLB_DEBUG_REQ_FW_AS_READ_SHIFT 5
+#define GLB_DEBUG_REQ_FW_AS_READ_MASK (0x1 << GLB_DEBUG_REQ_FW_AS_READ_SHIFT)
+#define GLB_DEBUG_ARG_IN0 0x0FE0
+#define GLB_DEBUG_ARG_IN1 0x0FE4
+#define GLB_DEBUG_ARG_OUT0 0x0FE0
+#endif /* CONFIG_MALI_CORESIGHT */
 
 /* USER register offsets */
 #define LATEST_FLUSH 0x0000 /* () Flush ID of latest clean-and-invalidate operation */
@@ -302,10 +326,17 @@
 #define CS_REQ_IDLE_RESOURCE_REQ_SHIFT 11
 #define CS_REQ_IDLE_RESOURCE_REQ_MASK (0x1 << CS_REQ_IDLE_RESOURCE_REQ_SHIFT)
 #define CS_REQ_IDLE_RESOURCE_REQ_GET(reg_val) \
-	(((reg_val)&CS_REQ_IDLE_RESOURCE_REQ_MASK) >> CS_REQ_IDLE_RESOURCE_REQ_SHIFT)
+	(((reg_val) & CS_REQ_IDLE_RESOURCE_REQ_MASK) >> CS_REQ_IDLE_RESOURCE_REQ_SHIFT)
 #define CS_REQ_IDLE_RESOURCE_REQ_SET(reg_val, value) \
 	(((reg_val) & ~CS_REQ_IDLE_RESOURCE_REQ_MASK) |  \
 	 (((value) << CS_REQ_IDLE_RESOURCE_REQ_SHIFT) & CS_REQ_IDLE_RESOURCE_REQ_MASK))
+#define CS_REQ_IDLE_SHARED_SB_DEC_SHIFT 12
+#define CS_REQ_IDLE_SHARED_SB_DEC_MASK (0x1 << CS_REQ_IDLE_SHARED_SB_DEC_SHIFT)
+#define CS_REQ_IDLE_SHARED_SB_DEC_GET(reg_val) \
+	(((reg_val) & CS_REQ_IDLE_SHARED_SB_DEC_MASK) >> CS_REQ_IDLE_SHARED_SB_DEC_SHIFT)
+#define CS_REQ_IDLE_SHARED_SB_DEC_REQ_SET(reg_val, value) \
+	(((reg_val) & ~CS_REQ_IDLE_SHARED_SB_DEC_MASK) |  \
+	 (((value) << CS_REQ_IDLE_SHARED_SB_DEC_SHIFT) & CS_REQ_IDLE_SHARED_SB_DEC_MASK))
 #define CS_REQ_TILER_OOM_SHIFT 26
 #define CS_REQ_TILER_OOM_MASK (0x1 << CS_REQ_TILER_OOM_SHIFT)
 #define CS_REQ_TILER_OOM_GET(reg_val) (((reg_val)&CS_REQ_TILER_OOM_MASK) >> CS_REQ_TILER_OOM_SHIFT)
@@ -547,6 +578,13 @@
 #define CS_STATUS_WAIT_SB_MASK_SET(reg_val, value) \
 	(((reg_val) & ~CS_STATUS_WAIT_SB_MASK_MASK) |  \
 	 (((value) << CS_STATUS_WAIT_SB_MASK_SHIFT) & CS_STATUS_WAIT_SB_MASK_MASK))
+#define CS_STATUS_WAIT_SB_SOURCE_SHIFT 16
+#define CS_STATUS_WAIT_SB_SOURCE_MASK (0xF << CS_STATUS_WAIT_SB_SOURCE_SHIFT)
+#define CS_STATUS_WAIT_SB_SOURCE_GET(reg_val)                                                      \
+	(((reg_val)&CS_STATUS_WAIT_SB_SOURCE_MASK) >> CS_STATUS_WAIT_SB_SOURCE_SHIFT)
+#define CS_STATUS_WAIT_SB_SOURCE_SET(reg_val, value)                                               \
+	(((reg_val) & ~CS_STATUS_WAIT_SB_SOURCE_MASK) |                                            \
+	 (((value) << CS_STATUS_WAIT_SB_SOURCE_SHIFT) & CS_STATUS_WAIT_SB_SOURCE_MASK))
 #define CS_STATUS_WAIT_SYNC_WAIT_CONDITION_SHIFT 24
 #define CS_STATUS_WAIT_SYNC_WAIT_CONDITION_MASK (0xF << CS_STATUS_WAIT_SYNC_WAIT_CONDITION_SHIFT)
 #define CS_STATUS_WAIT_SYNC_WAIT_CONDITION_GET(reg_val) \
@@ -557,6 +595,7 @@
 /* CS_STATUS_WAIT_SYNC_WAIT_CONDITION values */
 #define CS_STATUS_WAIT_SYNC_WAIT_CONDITION_LE 0x0
 #define CS_STATUS_WAIT_SYNC_WAIT_CONDITION_GT 0x1
+#define CS_STATUS_WAIT_SYNC_WAIT_CONDITION_GE 0x5
 /* End of CS_STATUS_WAIT_SYNC_WAIT_CONDITION values */
 #define CS_STATUS_WAIT_PROGRESS_WAIT_SHIFT 28
 #define CS_STATUS_WAIT_PROGRESS_WAIT_MASK (0x1 << CS_STATUS_WAIT_PROGRESS_WAIT_SHIFT)
@@ -572,6 +611,13 @@
 #define CS_STATUS_WAIT_PROTM_PEND_SET(reg_val, value) \
 	(((reg_val) & ~CS_STATUS_WAIT_PROTM_PEND_MASK) |  \
 	 (((value) << CS_STATUS_WAIT_PROTM_PEND_SHIFT) & CS_STATUS_WAIT_PROTM_PEND_MASK))
+#define CS_STATUS_WAIT_SYNC_WAIT_SIZE_SHIFT 30
+#define CS_STATUS_WAIT_SYNC_WAIT_SIZE_MASK (0x1 << CS_STATUS_WAIT_SYNC_WAIT_SIZE_SHIFT)
+#define CS_STATUS_WAIT_SYNC_WAIT_SIZE_GET(reg_val)                                                 \
+	(((reg_val)&CS_STATUS_WAIT_SYNC_WAIT_SIZE_MASK) >> CS_STATUS_WAIT_SYNC_WAIT_SIZE_SHIFT)
+#define CS_STATUS_WAIT_SYNC_WAIT_SIZE_SET(reg_val, value)                                          \
+	(((reg_val) & ~CS_STATUS_WAIT_SYNC_WAIT_SIZE_MASK) |                                       \
+	 (((value) << CS_STATUS_WAIT_SYNC_WAIT_SIZE_SHIFT) & CS_STATUS_WAIT_SYNC_WAIT_SIZE_MASK))
 #define CS_STATUS_WAIT_SYNC_WAIT_SHIFT 31
 #define CS_STATUS_WAIT_SYNC_WAIT_MASK (0x1 << CS_STATUS_WAIT_SYNC_WAIT_SHIFT)
 #define CS_STATUS_WAIT_SYNC_WAIT_GET(reg_val) \
@@ -835,11 +881,6 @@
 #define CSG_REQ_IDLE_GET(reg_val) (((reg_val)&CSG_REQ_IDLE_MASK) >> CSG_REQ_IDLE_SHIFT)
 #define CSG_REQ_IDLE_SET(reg_val, value) \
 	(((reg_val) & ~CSG_REQ_IDLE_MASK) | (((value) << CSG_REQ_IDLE_SHIFT) & CSG_REQ_IDLE_MASK))
-#define CSG_REQ_DOORBELL_SHIFT 30
-#define CSG_REQ_DOORBELL_MASK (0x1 << CSG_REQ_DOORBELL_SHIFT)
-#define CSG_REQ_DOORBELL_GET(reg_val) (((reg_val)&CSG_REQ_DOORBELL_MASK) >> CSG_REQ_DOORBELL_SHIFT)
-#define CSG_REQ_DOORBELL_SET(reg_val, value) \
-	(((reg_val) & ~CSG_REQ_DOORBELL_MASK) | (((value) << CSG_REQ_DOORBELL_SHIFT) & CSG_REQ_DOORBELL_MASK))
 #define CSG_REQ_PROGRESS_TIMER_EVENT_SHIFT 31
 #define CSG_REQ_PROGRESS_TIMER_EVENT_MASK (0x1 << CSG_REQ_PROGRESS_TIMER_EVENT_SHIFT)
 #define CSG_REQ_PROGRESS_TIMER_EVENT_GET(reg_val) \
@@ -956,6 +997,21 @@
 	(((reg_val) & ~CSG_PROTM_SUSPEND_BUF_POINTER_MASK) |  \
 	 (((value) << CSG_PROTM_SUSPEND_BUF_POINTER_SHIFT) & CSG_PROTM_SUSPEND_BUF_POINTER_MASK))
 
+/* CSG_DVS_BUF_BUFFER register */
+#define CSG_DVS_BUF_BUFFER_SIZE_SHIFT GPU_U(0)
+#define CSG_DVS_BUF_BUFFER_SIZE_MASK (GPU_U(0xFFF) << CSG_DVS_BUF_BUFFER_SIZE_SHIFT)
+#define CSG_DVS_BUF_BUFFER_SIZE_GET(reg_val) (((reg_val)&CSG_DVS_BUF_BUFFER_SIZE_MASK) >> CSG_DVS_BUF_BUFFER_SIZE_SHIFT)
+#define CSG_DVS_BUF_BUFFER_SIZE_SET(reg_val, value) \
+	(((reg_val) & ~CSG_DVS_BUF_BUFFER_SIZE_MASK) |  \
+	 (((value) << CSG_DVS_BUF_BUFFER_SIZE_SHIFT) & CSG_DVS_BUF_BUFFER_SIZE_MASK))
+#define CSG_DVS_BUF_BUFFER_POINTER_SHIFT GPU_U(12)
+#define CSG_DVS_BUF_BUFFER_POINTER_MASK                                                            \
+	(GPU_ULL(0xFFFFFFFFFFFFF) << CSG_DVS_BUF_BUFFER_POINTER_SHIFT)
+#define CSG_DVS_BUF_BUFFER_POINTER_GET(reg_val) \
+	(((reg_val)&CSG_DVS_BUF_BUFFER_POINTER_MASK) >> CSG_DVS_BUF_BUFFER_POINTER_SHIFT)
+#define CSG_DVS_BUF_BUFFER_POINTER_SET(reg_val, value) \
+	(((reg_val) & ~CSG_DVS_BUF_BUFFER_POINTER_MASK) |  \
+	 (((value) << CSG_DVS_BUF_BUFFER_POINTER_SHIFT) & CSG_DVS_BUF_BUFFER_POINTER_MASK))
 
 /* End of CSG_INPUT_BLOCK register set definitions */
 
@@ -1569,5 +1625,44 @@
 	(((reg_val) & ~GLB_PRFCNT_SIZE_FIRMWARE_SIZE_MASK) |                                       \
 	 ((GLB_PRFCNT_SIZE_FIRMWARE_SIZE_SET_MOD(value) << GLB_PRFCNT_SIZE_FIRMWARE_SIZE_SHIFT) &  \
 	  GLB_PRFCNT_SIZE_FIRMWARE_SIZE_MASK))
+
+/* GLB_DEBUG_REQ register */
+#define GLB_DEBUG_REQ_DEBUG_RUN_SHIFT GPU_U(23)
+#define GLB_DEBUG_REQ_DEBUG_RUN_MASK (GPU_U(0x1) << GLB_DEBUG_REQ_DEBUG_RUN_SHIFT)
+#define GLB_DEBUG_REQ_DEBUG_RUN_GET(reg_val)                                                       \
+	(((reg_val)&GLB_DEBUG_REQ_DEBUG_RUN_MASK) >> GLB_DEBUG_REQ_DEBUG_RUN_SHIFT)
+#define GLB_DEBUG_REQ_DEBUG_RUN_SET(reg_val, value)                                                \
+	(((reg_val) & ~GLB_DEBUG_REQ_DEBUG_RUN_MASK) |                                             \
+	 (((value) << GLB_DEBUG_REQ_DEBUG_RUN_SHIFT) & GLB_DEBUG_REQ_DEBUG_RUN_MASK))
+
+#define GLB_DEBUG_REQ_RUN_MODE_SHIFT GPU_U(24)
+#define GLB_DEBUG_REQ_RUN_MODE_MASK (GPU_U(0xFF) << GLB_DEBUG_REQ_RUN_MODE_SHIFT)
+#define GLB_DEBUG_REQ_RUN_MODE_GET(reg_val)                                                        \
+	(((reg_val)&GLB_DEBUG_REQ_RUN_MODE_MASK) >> GLB_DEBUG_REQ_RUN_MODE_SHIFT)
+#define GLB_DEBUG_REQ_RUN_MODE_SET(reg_val, value)                                                 \
+	(((reg_val) & ~GLB_DEBUG_REQ_RUN_MODE_MASK) |                                              \
+	 (((value) << GLB_DEBUG_REQ_RUN_MODE_SHIFT) & GLB_DEBUG_REQ_RUN_MODE_MASK))
+
+/* GLB_DEBUG_ACK register */
+#define GLB_DEBUG_ACK_DEBUG_RUN_SHIFT GPU_U(23)
+#define GLB_DEBUG_ACK_DEBUG_RUN_MASK (GPU_U(0x1) << GLB_DEBUG_ACK_DEBUG_RUN_SHIFT)
+#define GLB_DEBUG_ACK_DEBUG_RUN_GET(reg_val)                                                       \
+	(((reg_val)&GLB_DEBUG_ACK_DEBUG_RUN_MASK) >> GLB_DEBUG_ACK_DEBUG_RUN_SHIFT)
+#define GLB_DEBUG_ACK_DEBUG_RUN_SET(reg_val, value)                                                \
+	(((reg_val) & ~GLB_DEBUG_ACK_DEBUG_RUN_MASK) |                                             \
+	 (((value) << GLB_DEBUG_ACK_DEBUG_RUN_SHIFT) & GLB_DEBUG_ACK_DEBUG_RUN_MASK))
+
+#define GLB_DEBUG_ACK_RUN_MODE_SHIFT GPU_U(24)
+#define GLB_DEBUG_ACK_RUN_MODE_MASK (GPU_U(0xFF) << GLB_DEBUG_ACK_RUN_MODE_SHIFT)
+#define GLB_DEBUG_ACK_RUN_MODE_GET(reg_val)                                                        \
+	(((reg_val)&GLB_DEBUG_ACK_RUN_MODE_MASK) >> GLB_DEBUG_ACK_RUN_MODE_SHIFT)
+#define GLB_DEBUG_ACK_RUN_MODE_SET(reg_val, value)                                                 \
+	(((reg_val) & ~GLB_DEBUG_ACK_RUN_MODE_MASK) |                                              \
+	 (((value) << GLB_DEBUG_ACK_RUN_MODE_SHIFT) & GLB_DEBUG_ACK_RUN_MODE_MASK))
+
+/* RUN_MODE values */
+#define GLB_DEBUG_RUN_MODE_TYPE_NOP 0x0
+#define GLB_DEBUG_RUN_MODE_TYPE_CORE_DUMP 0x1
+/* End of RUN_MODE values */
 
 #endif /* _KBASE_CSF_REGISTERS_H_ */

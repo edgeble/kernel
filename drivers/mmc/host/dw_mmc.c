@@ -239,7 +239,7 @@ static void dw_mci_wait_while_busy(struct dw_mci *host, u32 cmd_flags)
 	 * ...also allow sending for SDMMC_CMD_VOLT_SWITCH where busy is
 	 * expected.
 	 */
-#ifdef CONFIG_ROCKCHIP_THUNDER_BOOT
+#ifdef CONFIG_ROCKCHIP_THUNDER_BOOT_MMC
 	if (host->slot->mmc->caps2 & MMC_CAP2_NO_SD &&
 	    host->slot->mmc->caps2 & MMC_CAP2_NO_SDIO)
 		delay = 0;
@@ -3317,7 +3317,7 @@ int dw_mci_probe(struct dw_mci *host)
 		}
 	}
 
-#ifdef CONFIG_ROCKCHIP_THUNDER_BOOT
+#ifdef CONFIG_ROCKCHIP_THUNDER_BOOT_MMC
 	if (device_property_read_bool(host->dev, "no-sd") &&
 	    device_property_read_bool(host->dev, "no-sdio")) {
 		if (readl_poll_timeout(host->regs + SDMMC_STATUS,
@@ -3618,9 +3618,7 @@ int dw_mci_runtime_resume(struct device *dev)
 	mci_writel(host, TMOUT, 0xFFFFFFFF);
 
 	mci_writel(host, RINTSTS, 0xFFFFFFFF);
-	mci_writel(host, INTMASK, SDMMC_INT_CMD_DONE | SDMMC_INT_DATA_OVER |
-		   SDMMC_INT_TXDR | SDMMC_INT_RXDR |
-		   DW_MCI_ERROR_FLAGS);
+	mci_writel(host, INTMASK, SDMMC_INT_CMD_DONE | SDMMC_INT_DATA_OVER | DW_MCI_ERROR_FLAGS);
 	mci_writel(host, CTRL, SDMMC_CTRL_INT_ENABLE);
 
 	if (host->is_rv1106_sd) {

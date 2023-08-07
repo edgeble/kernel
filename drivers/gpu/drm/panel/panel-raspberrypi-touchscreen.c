@@ -213,6 +213,26 @@ static const struct drm_display_mode rpi_touchscreen_modes[] = {
 	},
 };
 
+static const struct drm_display_mode rpi_touchscreen_modes_for_rk3588[] = {
+	{
+		/* Modeline comes from the Raspberry Pi firmware, with HFP=1
+		 * plugged in and clock re-computed from that.
+		 */
+		.clock = 26000000 / 1000,
+		.hdisplay = 800,
+		.hsync_start = 800 + 48,
+		.hsync_end = 800 + 48 + 88,
+		.htotal = 800 + 48 + 88 + 40,
+		.vdisplay = 480,
+		.vsync_start = 480 + 7,
+		.vsync_end = 480 + 7 + 1,
+		.vtotal = 480 + 7 + 1 + 21,
+		.flags = DRM_MODE_FLAG_NVSYNC | DRM_MODE_FLAG_NHSYNC,
+	},
+};
+
+static const struct drm_display_mode *rpi_ts_modes = rpi_touchscreen_modes;
+
 static struct rpi_touchscreen *panel_to_ts(struct drm_panel *panel)
 {
 	return container_of(panel, struct rpi_touchscreen, base);
@@ -230,7 +250,7 @@ static void rpi_touchscreen_i2c_write(struct rpi_touchscreen *ts,
 
 	ret = i2c_smbus_write_byte_data(ts->i2c, reg, val);
 	if (ret)
-		dev_err(&ts->dsi->dev, "I2C write failed: %d\n", ret);
+		dev_err(&ts->i2c->dev, "I2C write failed: %d\n", ret);
 }
 
 static int rpi_touchscreen_write(struct rpi_touchscreen *ts, u16 reg, u32 val)
@@ -328,7 +348,7 @@ static int rpi_touchscreen_get_modes(struct drm_panel *panel,
 	static const u32 bus_format = MEDIA_BUS_FMT_RGB888_1X24;
 
 	for (i = 0; i < ARRAY_SIZE(rpi_touchscreen_modes); i++) {
-		const struct drm_display_mode *m = &rpi_touchscreen_modes[i];
+		const struct drm_display_mode *m = &rpi_ts_modes[i];
 		struct drm_display_mode *mode;
 
 		mode = drm_mode_duplicate(connector->dev, m);
@@ -375,11 +395,24 @@ static int rpi_touchscreen_probe(struct i2c_client *i2c,
 	struct device_node *endpoint, *dsi_host_node;
 	struct mipi_dsi_host *host;
 	int ver;
+	struct device_node *np = i2c->dev.of_node;
+	u32 platform;
 	struct mipi_dsi_device_info info = {
 		.type = RPI_DSI_DRIVER_NAME,
 		.channel = 0,
 		.node = NULL,
 	};
+
+	if (of_property_read_u32(np, "platform", &platform)) {
+		dev_err(&i2c->dev, "failed to get platform property\n");
+	}
+
+	if (platform == 3588) {
+		dev_info(&i2c->dev, "Successfully get the platform property\n");
+		rpi_ts_modes = rpi_touchscreen_modes_for_rk3588;
+	} else {
+		dev_info(&i2c->dev, "Use the default property\n");
+	}
 
 	ts = devm_kzalloc(dev, sizeof(*ts), GFP_KERNEL);
 	if (!ts)

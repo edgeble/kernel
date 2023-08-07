@@ -238,12 +238,13 @@ config DRM_PANEL_MANTIX_MLAF057WE51
 	  has a resolution of 720x1440 pixels, a built in backlight and touch
 	  controller.
 
-config DRM_PANEL_MAXIM_DESERIALIZER
-	tristate "Maxim deserializer panel driver"
+config DRM_PANEL_MAXIM_MAX96752F
+	tristate "Maxim MAX96752F-based panels"
 	depends on OF
 	depends on BACKLIGHT_CLASS_DEVICE
 	help
-	  This driver supports the Maxim deserializer panels.
+	  Say Y if you want to enable support for panels based on the
+	  Maxim MAX96752F.
 
 config DRM_PANEL_OLIMEX_LCD_OLINUXINO
 	tristate "Olimex LCD-OLinuXino panel"
@@ -302,6 +303,16 @@ config DRM_PANEL_RASPBERRYPI_TOUCHSCREEN
 	  Say Y here if you want to enable support for the Raspberry
 	  Pi 7" Touchscreen.  To compile this driver as a module,
 	  choose M here.
+
+config DRM_PANEL_RASPITS_TC358762
+	tristate "Raspberry Pi 7-inch touchscreen tc358762 panel"
+	depends on OF && I2C
+	depends on BACKLIGHT_CLASS_DEVICE
+	select VIDEOMODE_HELPERS
+	help
+	  Say Y here if you want to enable support for Raspberry Pi
+	  touchscreen tc358762 panel.
+	  To compile this driver as a module, choose M here.
 
 config DRM_PANEL_RAYDIUM_RM67191
 	tristate "Raydium RM67191 FHD 1080x1920 DSI video mode panel"

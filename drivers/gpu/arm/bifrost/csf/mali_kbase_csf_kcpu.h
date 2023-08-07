@@ -22,6 +22,9 @@
 #ifndef _KBASE_CSF_KCPU_H_
 #define _KBASE_CSF_KCPU_H_
 
+#include <mali_kbase_fence.h>
+#include <mali_kbase_sync.h>
+
 #if (KERNEL_VERSION(4, 10, 0) > LINUX_VERSION_CODE)
 #include <linux/fence.h>
 #else
@@ -44,8 +47,8 @@ struct kbase_kcpu_command_import_info {
 };
 
 /**
- * struct kbase_kcpu_command_fence_info - Structure which holds information
- *		about the fence object enqueued in the kcpu command queue
+ * struct kbase_kcpu_command_fence_info - Structure which holds information about the
+ *                                        fence object enqueued in the kcpu command queue
  *
  * @fence_cb:      Fence callback
  * @fence:         Fence
@@ -236,9 +239,11 @@ struct kbase_kcpu_command {
 /**
  * struct kbase_kcpu_command_queue - a command queue executed by the kernel
  *
+ * @lock:			Lock to protect accesses to this queue.
  * @kctx:			The context to which this command queue belongs.
  * @commands:			Array of commands which have been successfully
  *				enqueued to this command queue.
+ * @wq:				Dedicated workqueue for processing commands.
  * @work:			struct work_struct which contains a pointer to
  *				the function which handles processing of kcpu
  *				commands enqueued into a kcpu command queue;
@@ -272,10 +277,14 @@ struct kbase_kcpu_command {
  * @jit_blocked:		Used to keep track of command queues blocked
  *				by a pending JIT allocation command.
  * @fence_timeout:		Timer used to detect the fence wait timeout.
+ * @metadata:                   Metadata structure containing basic information about
+ *                              this queue for any fence objects associated with this queue.
  */
 struct kbase_kcpu_command_queue {
+	struct mutex lock;
 	struct kbase_context *kctx;
 	struct kbase_kcpu_command commands[KBASEP_KCPU_QUEUE_SIZE];
+	struct workqueue_struct *wq;
 	struct work_struct work;
 	u8 start_offset;
 	u8 id;
@@ -291,6 +300,9 @@ struct kbase_kcpu_command_queue {
 #ifdef CONFIG_MALI_BIFROST_FENCE_DEBUG
 	struct timer_list fence_timeout;
 #endif /* CONFIG_MALI_BIFROST_FENCE_DEBUG */
+#if IS_ENABLED(CONFIG_SYNC_FILE)
+	struct kbase_kcpu_dma_fence_meta *metadata;
+#endif /* CONFIG_SYNC_FILE */
 };
 
 /**
@@ -354,5 +366,15 @@ int kbase_csf_kcpu_queue_context_init(struct kbase_context *kctx);
  *
  */
 void kbase_csf_kcpu_queue_context_term(struct kbase_context *kctx);
+
+#if IS_ENABLED(CONFIG_SYNC_FILE)
+/* Test wrappers for dma fence operations. */
+int kbase_kcpu_fence_signal_process(struct kbase_kcpu_command_queue *kcpu_queue,
+				    struct kbase_kcpu_command_fence_info *fence_info);
+
+int kbase_kcpu_fence_signal_init(struct kbase_kcpu_command_queue *kcpu_queue,
+				 struct kbase_kcpu_command *current_command,
+				 struct base_fence *fence, struct sync_file **sync_file, int *fd);
+#endif /* CONFIG_SYNC_FILE */
 
 #endif /* _KBASE_CSF_KCPU_H_ */

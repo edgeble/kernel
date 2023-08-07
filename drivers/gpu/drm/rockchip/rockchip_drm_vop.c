@@ -186,15 +186,6 @@ struct vop_plane_state {
 	struct vop_dump_list *planlist;
 };
 
-struct rockchip_mcu_timing {
-	int mcu_pix_total;
-	int mcu_cs_pst;
-	int mcu_cs_pend;
-	int mcu_rw_pst;
-	int mcu_rw_pend;
-	int mcu_hold_mode;
-};
-
 struct vop_win {
 	struct vop_win *parent;
 	struct drm_plane base;
@@ -672,6 +663,19 @@ static bool is_uv_swap(uint32_t bus_format, uint32_t output_mode)
 		return false;
 }
 
+static bool is_rb_swap(uint32_t bus_format, uint32_t output_mode)
+{
+	/*
+	 * The default component order of serial rgb3x8 formats
+	 * is BGR. So it is needed to enable RB swap.
+	 */
+	if (bus_format == MEDIA_BUS_FMT_RGB888_3X8 ||
+	    bus_format == MEDIA_BUS_FMT_RGB888_DUMMY_4X8)
+		return true;
+	else
+		return false;
+}
+
 static bool is_yc_swap(uint32_t bus_format)
 {
 	switch (bus_format) {
@@ -826,10 +830,21 @@ static void scl_vop_cal_scl_fac(struct vop *vop, const struct vop_win *win,
 	uint16_t lb_mode;
 	uint32_t val;
 	const struct vop_data *vop_data = vop->data;
+	struct drm_display_mode *adjusted_mode = &vop->rockchip_crtc.crtc.state->adjusted_mode;
 	int vskiplines;
 
 	if (!win->phy->scl)
 		return;
+
+	if ((adjusted_mode->flags & DRM_MODE_FLAG_INTERLACE) && vop->version == VOP_VERSION(2, 2)) {
+		VOP_SCL_SET(vop, win, scale_yrgb_x, ((src_w << 12) / dst_w));
+		VOP_SCL_SET(vop, win, scale_yrgb_y, ((src_h << 12) / dst_h));
+		if (is_yuv) {
+			VOP_SCL_SET(vop, win, scale_cbcr_x, ((cbcr_src_w << 12) / dst_w));
+			VOP_SCL_SET(vop, win, scale_cbcr_y, ((cbcr_src_h << 12) / dst_h));
+		}
+		return;
+	}
 
 	if (!(vop_data->feature & VOP_FEATURE_ALPHA_SCALE)) {
 		if (is_alpha_support(pixel_format) &&
@@ -2018,6 +2033,8 @@ static void vop_plane_atomic_update(struct drm_plane *plane,
 			dsp_h = 4;
 		actual_h = dsp_h * actual_h / drm_rect_height(dest);
 	}
+	if ((adjusted_mode->flags & DRM_MODE_FLAG_INTERLACE) && vop->version == VOP_VERSION(2, 2))
+		dsp_h = dsp_h / 2;
 
 	act_info = (actual_h - 1) << 16 | ((actual_w - 1) & 0xffff);
 
@@ -2026,6 +2043,8 @@ static void vop_plane_atomic_update(struct drm_plane *plane,
 
 	dsp_stx = dest->x1 + mode->crtc_htotal - mode->crtc_hsync_start;
 	dsp_sty = dest->y1 + mode->crtc_vtotal - mode->crtc_vsync_start;
+	if ((adjusted_mode->flags & DRM_MODE_FLAG_INTERLACE) && vop->version == VOP_VERSION(2, 2))
+		dsp_sty = dest->y1 / 2 + mode->crtc_vtotal - mode->crtc_vsync_start;
 	dsp_st = dsp_sty << 16 | (dsp_stx & 0xffff);
 
 	s = to_rockchip_crtc_state(crtc->state);
@@ -2053,7 +2072,7 @@ static void vop_plane_atomic_update(struct drm_plane *plane,
 
 	if (win->phy->scl)
 		scl_vop_cal_scl_fac(vop, win, actual_w, actual_h,
-				    drm_rect_width(dest), drm_rect_height(dest),
+				    drm_rect_width(dest), dsp_h,
 				    fb->format->format);
 
 	if (VOP_WIN_SUPPORT(vop, win, color_key))
@@ -3139,8 +3158,9 @@ static void vop_update_csc(struct drm_crtc *crtc)
 	     s->output_if & VOP_OUTPUT_IF_BT656))
 		s->output_mode = ROCKCHIP_OUT_MODE_P888;
 
-	if (is_uv_swap(s->bus_format, s->output_mode))
-		VOP_CTRL_SET(vop, dsp_data_swap, DSP_RB_SWAP);
+	if (is_uv_swap(s->bus_format, s->output_mode) ||
+	    is_rb_swap(s->bus_format, s->output_mode))
+		VOP_CTRL_SET(vop, dsp_rb_swap, 1);
 	else
 		VOP_CTRL_SET(vop, dsp_data_swap, 0);
 
@@ -3310,6 +3330,8 @@ static void vop_crtc_atomic_enable(struct drm_crtc *crtc,
 			VOP_CTRL_SET(vop, yuv_clip, 1);
 		} else if (s->output_if & VOP_OUTPUT_IF_BT656) {
 			VOP_CTRL_SET(vop, bt656_en, 1);
+			yc_swap = is_yc_swap(s->bus_format);
+			VOP_CTRL_SET(vop, bt1120_yc_swap, yc_swap);
 		}
 		break;
 	case DRM_MODE_CONNECTOR_eDP:
@@ -4078,6 +4100,9 @@ static void vop_crtc_reset(struct drm_crtc *crtc)
 static struct drm_crtc_state *vop_crtc_duplicate_state(struct drm_crtc *crtc)
 {
 	struct rockchip_crtc_state *rockchip_state, *old_state;
+
+	if (WARN_ON(!crtc->state))
+		return NULL;
 
 	old_state = to_rockchip_crtc_state(crtc->state);
 	rockchip_state = kmemdup(old_state, sizeof(*old_state), GFP_KERNEL);

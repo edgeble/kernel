@@ -58,7 +58,7 @@ enum MPP_DEVICE_TYPE {
 	MPP_DEVICE_HEVC_DEC	= 8, /* 0x00000100 */
 	MPP_DEVICE_RKVDEC	= 9, /* 0x00000200 */
 	MPP_DEVICE_AVSPLUS_DEC	= 12, /* 0x00001000 */
-	MPP_DEVICE_JPGDEC	= 13, /* 0x00002000 */
+	MPP_DEVICE_RKJPEGD	= 13, /* 0x00002000 */
 
 	MPP_DEVICE_RKVENC	= 16, /* 0x00010000 */
 	MPP_DEVICE_VEPU1	= 17, /* 0x00020000 */
@@ -67,6 +67,7 @@ enum MPP_DEVICE_TYPE {
 	MPP_DEVICE_VEPU22	= 24, /* 0x01000000 */
 
 	MPP_DEVICE_IEP2		= 28, /* 0x10000000 */
+	MPP_DEVICE_VDPP		= 29, /* 0x20000000 */
 	MPP_DEVICE_BUTT,
 };
 
@@ -88,6 +89,7 @@ enum MPP_DRIVER_TYPE {
 	MPP_DRIVER_RKVDEC2,
 	MPP_DRIVER_RKVENC2,
 	MPP_DRIVER_AV1DEC,
+	MPP_DRIVER_VDPP,
 	MPP_DRIVER_BUTT,
 };
 
@@ -191,6 +193,7 @@ struct mpp_task;
 struct mpp_session;
 struct mpp_dma_session;
 struct mpp_taskqueue;
+struct iommu_domain;
 
 /* data common struct for parse out */
 struct mpp_request {
@@ -343,6 +346,9 @@ struct mpp_dev {
 	void __iomem *reg_base;
 	struct mpp_grf_info *grf_info;
 	struct mpp_iommu_info *iommu_info;
+	int (*fault_handler)(struct iommu_domain *iommu, struct device *iommu_dev,
+			     unsigned long iova, int status, void *arg);
+	resource_size_t io_base;
 
 	atomic_t reset_request;
 	atomic_t session_index;
@@ -537,6 +543,8 @@ struct mpp_taskqueue {
 	unsigned long core_idle;
 	u32 core_id_max;
 	u32 core_count;
+	unsigned long dev_active_flags;
+	u32 iommu_fault;
 };
 
 struct mpp_reset_group {
@@ -678,11 +686,14 @@ int mpp_task_dump_hw_reg(struct mpp_dev *mpp);
 void mpp_task_dump_timing(struct mpp_task *task, s64 time_diff);
 
 void mpp_reg_show(struct mpp_dev *mpp, u32 offset);
+void mpp_reg_show_range(struct mpp_dev *mpp, u32 start, u32 end);
 void mpp_free_task(struct kref *ref);
 
 void mpp_session_deinit(struct mpp_session *session);
 void mpp_session_cleanup_detach(struct mpp_taskqueue *queue,
 				struct kthread_work *work);
+
+int mpp_taskqueue_pending_to_run(struct mpp_taskqueue *queue, struct mpp_task *task);
 
 int mpp_dev_probe(struct mpp_dev *mpp,
 		  struct platform_device *pdev);
@@ -706,7 +717,8 @@ bool mpp_grf_is_changed(struct mpp_grf_info *grf_info);
 int mpp_set_grf(struct mpp_grf_info *grf_info);
 
 int mpp_time_record(struct mpp_task *task);
-int mpp_time_diff(struct mpp_task *task, u32 clk_hz);
+int mpp_time_diff(struct mpp_task *task);
+int mpp_time_diff_with_hw_time(struct mpp_task *task, u32 clk_hz);
 int mpp_time_part_diff(struct mpp_task *task);
 
 int mpp_write_req(struct mpp_dev *mpp, u32 *regs,
@@ -891,5 +903,6 @@ extern struct platform_driver rockchip_av1_iommu_driver;
 extern int av1dec_driver_register(struct platform_driver *drv);
 extern void av1dec_driver_unregister(struct platform_driver *drv);
 extern struct bus_type av1dec_bus;
+extern struct platform_driver rockchip_vdpp_driver;
 
 #endif

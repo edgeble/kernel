@@ -29,7 +29,7 @@
 #define RKCIF_DEFAULT_WIDTH	640
 #define RKCIF_DEFAULT_HEIGHT	480
 
-#define CSI_ERRSTR_LEN		(128)
+#define CSI_ERRSTR_LEN		(256)
 #define CSI_VCINFO_LEN		(12)
 
 /*
@@ -61,6 +61,7 @@
 #define CSIHOST_ERR1_ERR_FRM_DATA	0x0000f000
 #define CSIHOST_ERR1_ERR_CRC		0x0f000000
 #define CSIHOST_ERR1_ERR_ECC2		0x10000000
+#define CSIHOST_ERR1_ERR_CTRL		0x000f0000
 
 #define CSIHOST_ERR2_PHYERR_ESC		0x0000000f
 #define CSIHOST_ERR2_PHYERR_SOTHS	0x000000f0
@@ -87,6 +88,7 @@ enum rkcsi2_chip_id {
 	CHIP_RV1126_CSI2,
 	CHIP_RK3568_CSI2,
 	CHIP_RK3588_CSI2,
+	CHIP_RK3562_CSI2,
 };
 
 enum csi2_pads {
@@ -163,7 +165,7 @@ struct csi2_dev {
 u32 rkcif_csi2_get_sof(struct csi2_dev *csi2_dev);
 void rkcif_csi2_set_sof(struct csi2_dev *csi2_dev, u32 seq);
 void rkcif_csi2_event_inc_sof(struct csi2_dev *csi2_dev);
-int __init rkcif_csi2_plat_drv_init(void);
+int rkcif_csi2_plat_drv_init(void);
 void __exit rkcif_csi2_plat_drv_exit(void);
 int rkcif_csi2_register_notifier(struct notifier_block *nb);
 int rkcif_csi2_unregister_notifier(struct notifier_block *nb);

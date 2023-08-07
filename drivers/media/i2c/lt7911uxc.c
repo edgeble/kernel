@@ -11,6 +11,8 @@
  * V0.0X01.0X02 add CPHY support.
  * V0.0X01.0X03 add rk3588 dcphy param.
  * V0.0X01.0X04 add 5K60 support for CPHY.
+ * V0.0X01.0X05 add CSI BGR888 fmt.
+ * V0.0X01.0X06 fix dcphy params and add more fmt.
  *
  */
 
@@ -38,7 +40,7 @@
 #include <media/v4l2-event.h>
 #include <media/v4l2-fwnode.h>
 
-#define DRIVER_VERSION			KERNEL_VERSION(0, 0x01, 0x04)
+#define DRIVER_VERSION			KERNEL_VERSION(0, 0x01, 0x06)
 
 static int debug;
 module_param(debug, int, 0644);
@@ -47,9 +49,14 @@ MODULE_PARM_DESC(debug, "debug level (0-3)");
 #define I2C_MAX_XFER_SIZE	128
 #define POLL_INTERVAL_MS	1000
 
-#define LT7911UXC_LINK_FREQ_HIGH	1250000000
-#define LT7911UXC_LINK_FREQ_LOW		400000000
+#define LT7911UXC_LINK_FREQ_1250M	1250000000
+#define LT7911UXC_LINK_FREQ_860M	860000000
 #define LT7911UXC_LINK_FREQ_700M	700000000
+#define LT7911UXC_LINK_FREQ_400M	400000000
+#define LT7911UXC_LINK_FREQ_300M	300000000
+#define LT7911UXC_LINK_FREQ_200M	200000000
+#define LT7911UXC_LINK_FREQ_100M	100000000
+
 #define LT7911UXC_PIXEL_RATE		800000000
 
 #define LT7911UXC_CHIPID	0x0119
@@ -93,12 +100,22 @@ MODULE_PARM_DESC(debug, "debug level (0-3)");
 #define ENABLE_STREAM		0x01
 #define DISABLE_STREAM		0x00
 
+#ifdef LT7911UXC_OUT_RGB
+#define LT7911UXC_MEDIA_BUS_FMT		MEDIA_BUS_FMT_BGR888_1X24
+#else
+#define LT7911UXC_MEDIA_BUS_FMT		MEDIA_BUS_FMT_UYVY8_2X8
+#endif
+
 #define LT7911UXC_NAME			"LT7911UXC"
 
 static const s64 link_freq_menu_items[] = {
-	LT7911UXC_LINK_FREQ_HIGH,
-	LT7911UXC_LINK_FREQ_LOW,
+	LT7911UXC_LINK_FREQ_1250M,
+	LT7911UXC_LINK_FREQ_860M,
 	LT7911UXC_LINK_FREQ_700M,
+	LT7911UXC_LINK_FREQ_400M,
+	LT7911UXC_LINK_FREQ_300M,
+	LT7911UXC_LINK_FREQ_200M,
+	LT7911UXC_LINK_FREQ_100M,
 };
 
 struct lt7911uxc {
@@ -163,9 +180,9 @@ struct lt7911uxc_mode {
 static struct rkmodule_csi_dphy_param rk3588_dcphy_param = {
 	.vendor = PHY_VENDOR_SAMSUNG,
 	.lp_vol_ref = 3,
-	.lp_hys_sw = {0, 0, 0, 0},
-	.lp_escclk_pol_sel = {1, 0, 1, 0},
-	.skew_data_cal_clk = {0, 0, 0, 0},
+	.lp_hys_sw = {3, 3, 3, 0},
+	.lp_escclk_pol_sel = {1, 0, 0, 0},
+	.skew_data_cal_clk = {0, 0, 0, 3},
 	.clk_hs_term_sel = 2,
 	.data_hs_term_sel = {2, 2, 2, 2},
 	.reserved = {0},
@@ -191,7 +208,27 @@ static const struct lt7911uxc_mode supported_modes_dphy[] = {
 		},
 		.hts_def = 2200,
 		.vts_def = 1125,
-		.mipi_freq_idx = 0,
+		.mipi_freq_idx = 4,
+	}, {
+		.width = 1600,
+		.height = 1200,
+		.max_fps = {
+			.numerator = 10000,
+			.denominator = 600000,
+		},
+		.hts_def = 2160,
+		.vts_def = 1250,
+		.mipi_freq_idx = 4,
+	}, {
+		.width = 1280,
+		.height = 960,
+		.max_fps = {
+			.numerator = 10000,
+			.denominator = 600000,
+		},
+		.hts_def = 1712,
+		.vts_def = 994,
+		.mipi_freq_idx = 5,
 	}, {
 		.width = 1280,
 		.height = 720,
@@ -201,7 +238,17 @@ static const struct lt7911uxc_mode supported_modes_dphy[] = {
 		},
 		.hts_def = 1650,
 		.vts_def = 750,
-		.mipi_freq_idx = 0,
+		.mipi_freq_idx = 5,
+	}, {
+		.width = 800,
+		.height = 600,
+		.max_fps = {
+			.numerator = 10000,
+			.denominator = 600000,
+		},
+		.hts_def = 1056,
+		.vts_def = 628,
+		.mipi_freq_idx = 6,
 	}, {
 		.width = 720,
 		.height = 576,
@@ -211,7 +258,7 @@ static const struct lt7911uxc_mode supported_modes_dphy[] = {
 		},
 		.hts_def = 864,
 		.vts_def = 625,
-		.mipi_freq_idx = 1,
+		.mipi_freq_idx = 6,
 	}, {
 		.width = 720,
 		.height = 480,
@@ -221,7 +268,7 @@ static const struct lt7911uxc_mode supported_modes_dphy[] = {
 		},
 		.hts_def = 858,
 		.vts_def = 525,
-		.mipi_freq_idx = 1,
+		.mipi_freq_idx = 6,
 	},
 };
 
@@ -235,7 +282,7 @@ static const struct lt7911uxc_mode supported_modes_cphy[] = {
 		},
 		.hts_def = 5500,
 		.vts_def = 2250,
-		.mipi_freq_idx = 2,
+		.mipi_freq_idx = 1,
 	}, {
 		.width = 3840,
 		.height = 2160,
@@ -245,7 +292,7 @@ static const struct lt7911uxc_mode supported_modes_cphy[] = {
 		},
 		.hts_def = 4400,
 		.vts_def = 2250,
-		.mipi_freq_idx = 1,
+		.mipi_freq_idx = 2,
 	}, {
 		.width = 1920,
 		.height = 1080,
@@ -255,7 +302,7 @@ static const struct lt7911uxc_mode supported_modes_cphy[] = {
 		},
 		.hts_def = 2200,
 		.vts_def = 1125,
-		.mipi_freq_idx = 1,
+		.mipi_freq_idx = 5,
 	}, {
 		.width = 1280,
 		.height = 720,
@@ -265,7 +312,7 @@ static const struct lt7911uxc_mode supported_modes_cphy[] = {
 		},
 		.hts_def = 1650,
 		.vts_def = 750,
-		.mipi_freq_idx = 1,
+		.mipi_freq_idx = 6,
 	}, {
 		.width = 720,
 		.height = 576,
@@ -275,7 +322,7 @@ static const struct lt7911uxc_mode supported_modes_cphy[] = {
 		},
 		.hts_def = 864,
 		.vts_def = 625,
-		.mipi_freq_idx = 1,
+		.mipi_freq_idx = 6,
 	}, {
 		.width = 720,
 		.height = 480,
@@ -285,7 +332,7 @@ static const struct lt7911uxc_mode supported_modes_cphy[] = {
 		},
 		.hts_def = 858,
 		.vts_def = 525,
-		.mipi_freq_idx = 1,
+		.mipi_freq_idx = 6,
 	},
 };
 
@@ -559,12 +606,6 @@ static int lt7911uxc_get_detected_timings(struct v4l2_subdev *sd,
 	val_l = i2c_rd8(sd, VACT_L);
 	vact = (val_h << 8) | val_l;
 
-	if (!lt7911uxc_rcv_supported_res(sd, hact, vact)) {
-		lt7911uxc->nosignal = true;
-		v4l2_err(sd, "%s: rcv err res, return no signal!\n", __func__);
-		return -EINVAL;
-	}
-
 	lt7911uxc->nosignal = false;
 	lt7911uxc->is_audio_present = true;
 	timings->type = V4L2_DV_BT_656_1120;
@@ -573,6 +614,12 @@ static int lt7911uxc_get_detected_timings(struct v4l2_subdev *sd,
 	bt->height = vact;
 	bt->pixelclock = pixel_clock;
 	fps = pixel_clock / (htotal * vtotal);
+
+	if (!lt7911uxc_rcv_supported_res(sd, hact, vact)) {
+		lt7911uxc->nosignal = true;
+		v4l2_err(sd, "%s: rcv err res, return no signal!\n", __func__);
+		return -EINVAL;
+	}
 
 	v4l2_info(sd, "act:%dx%d, total:%dx%d, pixclk:%d, fps:%d\n",
 			hact, vact, htotal, vtotal, pixel_clock, fps);
@@ -684,6 +731,29 @@ static inline void enable_stream(struct v4l2_subdev *sd, bool enable)
 			__func__, enable ? "en" : "dis");
 }
 
+static void lt7911uxc_print_dv_timings(struct v4l2_subdev *sd, const char *prefix)
+{
+	struct lt7911uxc *lt7911uxc = to_lt7911uxc(sd);
+	const struct v4l2_bt_timings *bt = &lt7911uxc->timings.bt;
+	u32 htot, vtot;
+	u32 fps;
+
+	htot = lt7911uxc->cur_mode->hts_def;
+	vtot = lt7911uxc->cur_mode->vts_def;
+	if (bt->interlaced)
+		vtot /= 2;
+
+	fps = (htot * vtot) > 0 ? div_u64((100 * (u64)bt->pixelclock),
+				(htot * vtot)) : 0;
+
+	if (prefix == NULL)
+		prefix = "";
+
+	v4l2_info(sd, "%s: %s%ux%u%s%u.%02u (%ux%u)\n", sd->name, prefix,
+		bt->width, bt->height, bt->interlaced ? "i" : "p",
+		fps / 100, fps % 100, htot, vtot);
+}
+
 static void lt7911uxc_format_change(struct v4l2_subdev *sd)
 {
 	struct lt7911uxc *lt7911uxc = to_lt7911uxc(sd);
@@ -702,12 +772,11 @@ static void lt7911uxc_format_change(struct v4l2_subdev *sd)
 		enable_stream(sd, false);
 		/* automatically set timing rather than set by user */
 		lt7911uxc_s_dv_timings(sd, &timings);
-		v4l2_print_dv_timings(sd->name,
-				"Format_change: New format: ",
-				&timings, false);
-		if (sd->devnode)
-			v4l2_subdev_notify_event(sd, &lt7911uxc_ev_fmt);
+		lt7911uxc_print_dv_timings(sd,
+				"Format_change: New format: ");
 	}
+	if (sd->devnode)
+		v4l2_subdev_notify_event(sd, &lt7911uxc_ev_fmt);
 }
 
 static int lt7911uxc_isr(struct v4l2_subdev *sd, u32 status, bool *handled)
@@ -893,7 +962,7 @@ static int lt7911uxc_enum_mbus_code(struct v4l2_subdev *sd,
 {
 	switch (code->index) {
 	case 0:
-		code->code = MEDIA_BUS_FMT_UYVY8_2X8;
+		code->code = LT7911UXC_MEDIA_BUS_FMT;
 		break;
 
 	default:
@@ -912,55 +981,13 @@ static int lt7911uxc_enum_frame_sizes(struct v4l2_subdev *sd,
 	if (fse->index >= lt7911uxc->cfg_num)
 		return -EINVAL;
 
-	if (fse->code != MEDIA_BUS_FMT_UYVY8_2X8)
+	if (fse->code != LT7911UXC_MEDIA_BUS_FMT)
 		return -EINVAL;
 
 	fse->min_width  = lt7911uxc->support_modes[fse->index].width;
 	fse->max_width  = lt7911uxc->support_modes[fse->index].width;
 	fse->max_height = lt7911uxc->support_modes[fse->index].height;
 	fse->min_height = lt7911uxc->support_modes[fse->index].height;
-
-	return 0;
-}
-
-static int lt7911uxc_get_fmt(struct v4l2_subdev *sd,
-			struct v4l2_subdev_pad_config *cfg,
-			struct v4l2_subdev_format *format)
-{
-	struct lt7911uxc *lt7911uxc = to_lt7911uxc(sd);
-
-	mutex_lock(&lt7911uxc->confctl_mutex);
-	format->format.code = lt7911uxc->mbus_fmt_code;
-	format->format.width = lt7911uxc->timings.bt.width;
-	format->format.height = lt7911uxc->timings.bt.height;
-	format->format.field =
-		lt7911uxc->timings.bt.interlaced ?
-		V4L2_FIELD_INTERLACED : V4L2_FIELD_NONE;
-	format->format.colorspace = V4L2_COLORSPACE_SRGB;
-	mutex_unlock(&lt7911uxc->confctl_mutex);
-
-	v4l2_dbg(1, debug, sd, "%s: fmt code:%d, w:%d, h:%d, field code:%d\n",
-			__func__, format->format.code, format->format.width,
-			format->format.height, format->format.field);
-
-	return 0;
-}
-
-static int lt7911uxc_enum_frame_interval(struct v4l2_subdev *sd,
-				struct v4l2_subdev_pad_config *cfg,
-				struct v4l2_subdev_frame_interval_enum *fie)
-{
-	struct lt7911uxc *lt7911uxc = to_lt7911uxc(sd);
-
-	if (fie->index >= lt7911uxc->cfg_num)
-		return -EINVAL;
-
-	if (fie->code != MEDIA_BUS_FMT_UYVY8_2X8)
-		return -EINVAL;
-
-	fie->width = lt7911uxc->support_modes[fie->index].width;
-	fie->height = lt7911uxc->support_modes[fie->index].height;
-	fie->interval = lt7911uxc->support_modes[fie->index].max_fps;
 
 	return 0;
 }
@@ -992,6 +1019,59 @@ lt7911uxc_find_best_fit(struct lt7911uxc *lt7911uxc, struct v4l2_subdev_format *
 	return &lt7911uxc->support_modes[cur_best_fit];
 }
 
+static int lt7911uxc_get_fmt(struct v4l2_subdev *sd,
+			struct v4l2_subdev_pad_config *cfg,
+			struct v4l2_subdev_format *format)
+{
+	struct lt7911uxc *lt7911uxc = to_lt7911uxc(sd);
+	const struct lt7911uxc_mode *mode;
+
+	mutex_lock(&lt7911uxc->confctl_mutex);
+	format->format.code = lt7911uxc->mbus_fmt_code;
+	format->format.width = lt7911uxc->timings.bt.width;
+	format->format.height = lt7911uxc->timings.bt.height;
+	format->format.field =
+		lt7911uxc->timings.bt.interlaced ?
+		V4L2_FIELD_INTERLACED : V4L2_FIELD_NONE;
+	format->format.colorspace = V4L2_COLORSPACE_SRGB;
+	mutex_unlock(&lt7911uxc->confctl_mutex);
+
+	mode = lt7911uxc_find_best_fit(lt7911uxc, format);
+	lt7911uxc->cur_mode = mode;
+
+	__v4l2_ctrl_s_ctrl_int64(lt7911uxc->pixel_rate,
+				LT7911UXC_PIXEL_RATE);
+	__v4l2_ctrl_s_ctrl(lt7911uxc->link_freq,
+				mode->mipi_freq_idx);
+
+	v4l2_dbg(1, debug, sd, "%s: mode->mipi_freq_idx(%d)",
+		 __func__, mode->mipi_freq_idx);
+
+	v4l2_dbg(1, debug, sd, "%s: fmt code:%d, w:%d, h:%d, field code:%d\n",
+			__func__, format->format.code, format->format.width,
+			format->format.height, format->format.field);
+
+	return 0;
+}
+
+static int lt7911uxc_enum_frame_interval(struct v4l2_subdev *sd,
+				struct v4l2_subdev_pad_config *cfg,
+				struct v4l2_subdev_frame_interval_enum *fie)
+{
+	struct lt7911uxc *lt7911uxc = to_lt7911uxc(sd);
+
+	if (fie->index >= lt7911uxc->cfg_num)
+		return -EINVAL;
+
+	fie->code = LT7911UXC_MEDIA_BUS_FMT;
+
+	fie->width = lt7911uxc->support_modes[fie->index].width;
+	fie->height = lt7911uxc->support_modes[fie->index].height;
+	fie->interval = lt7911uxc->support_modes[fie->index].max_fps;
+
+	return 0;
+}
+
 static int lt7911uxc_set_fmt(struct v4l2_subdev *sd,
 			struct v4l2_subdev_pad_config *cfg,
 			struct v4l2_subdev_format *format)
@@ -1009,7 +1089,7 @@ static int lt7911uxc_set_fmt(struct v4l2_subdev *sd,
 		return ret;
 
 	switch (code) {
-	case MEDIA_BUS_FMT_UYVY8_2X8:
+	case LT7911UXC_MEDIA_BUS_FMT:
 		break;
 
 	default:
@@ -1023,15 +1103,7 @@ static int lt7911uxc_set_fmt(struct v4l2_subdev *sd,
 	mode = lt7911uxc_find_best_fit(lt7911uxc, format);
 	lt7911uxc->cur_mode = mode;
 
-	__v4l2_ctrl_s_ctrl_int64(lt7911uxc->pixel_rate,
-				LT7911UXC_PIXEL_RATE);
-	__v4l2_ctrl_s_ctrl(lt7911uxc->link_freq,
-				mode->mipi_freq_idx);
-
 	enable_stream(sd, false);
-
-	dev_info(&lt7911uxc->i2c_client->dev, "%s: mode->mipi_freq_idx(%d)",
-		 __func__, mode->mipi_freq_idx);
 
 	return 0;
 }
@@ -1205,7 +1277,7 @@ static int lt7911uxc_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 	/* Initialize try_fmt */
 	try_fmt->width = def_mode->width;
 	try_fmt->height = def_mode->height;
-	try_fmt->code = MEDIA_BUS_FMT_UYVY8_2X8;
+	try_fmt->code = LT7911UXC_MEDIA_BUS_FMT;
 	try_fmt->field = V4L2_FIELD_NONE;
 	mutex_unlock(&lt7911uxc->confctl_mutex);
 
@@ -1277,16 +1349,6 @@ static const struct v4l2_ctrl_config lt7911uxc_ctrl_audio_present = {
 	.def = 0,
 	.flags = V4L2_CTRL_FLAG_READ_ONLY,
 };
-
-static void lt7911uxc_reset(struct lt7911uxc *lt7911uxc)
-{
-	gpiod_set_value(lt7911uxc->reset_gpio, 0);
-	usleep_range(2000, 2100);
-	gpiod_set_value(lt7911uxc->reset_gpio, 1);
-	usleep_range(120*1000, 121*1000);
-	gpiod_set_value(lt7911uxc->reset_gpio, 0);
-	usleep_range(300*1000, 310*1000);
-}
 
 static int lt7911uxc_init_v4l2_ctrls(struct lt7911uxc *lt7911uxc)
 {
@@ -1419,7 +1481,9 @@ static int lt7911uxc_probe_of(struct lt7911uxc *lt7911uxc)
 	lt7911uxc->enable_hdcp = false;
 
 	gpiod_set_value(lt7911uxc->power_gpio, 1);
-	lt7911uxc_reset(lt7911uxc);
+	//delay 2~3ms before reset
+	usleep_range(2000, 3000);
+	gpiod_set_value(lt7911uxc->reset_gpio, 0);
 
 	ret = 0;
 
@@ -1477,7 +1541,7 @@ static int lt7911uxc_probe(struct i2c_client *client,
 
 	sd = &lt7911uxc->sd;
 	lt7911uxc->i2c_client = client;
-	lt7911uxc->mbus_fmt_code = MEDIA_BUS_FMT_UYVY8_2X8;
+	lt7911uxc->mbus_fmt_code = LT7911UXC_MEDIA_BUS_FMT;
 
 	err = lt7911uxc_probe_of(lt7911uxc);
 	if (err) {
@@ -1567,6 +1631,7 @@ static int lt7911uxc_probe(struct i2c_client *client,
 		v4l2_err(sd, "v4l2 ctrl handler setup failed! err:%d\n", err);
 		goto err_work_queues;
 	}
+	lt7911uxc_format_change(sd);
 
 	v4l2_info(sd, "%s found @ 0x%x (%s)\n", client->name,
 			client->addr << 1, client->adapter->name);
