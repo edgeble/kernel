@@ -2,17 +2,17 @@
 /*
  * Copyright (c) 2023 Edgeble AI Technologies Pvt. Ltd.
  *
- * DT-overlay for the Edgeble Neu6B-IO CAM5-IMX415.
+ * DT-overlay for the Edgeble Neu6B-IO CAM4-IMX415.
  */
 
 / {
-	dvdd_1v1_cam5: dvdd-1v1-cam5-regulator {
+	dvdd_1v1_cam4: dvdd-1v1-cam4-regulator {
 		compatible = "regulator-fixed";
-		regulator-name = "dvdd_1v1_cam5";
+		regulator-name = "dvdd_1v1_cam4";
 		enable-active-high;
 		gpio = <&gpio1 RK_PB1 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
-		pinctrl-0 = <&pwdn_gpio_cam5>;
+		pinctrl-0 = <&pwdn_gpio_cam4>;
 		regulator-always-on;
 		regulator-boot-on;
 		regulator-min-microvolt = <1100000>;
@@ -20,30 +20,30 @@
 		vin-supply = <&vcc5v0_sys>;
 	};
 
-	dovdd_1v8_cam5: dovdd-1v8-cam5-regulator {
+	dovdd_1v8_cam4: dovdd-1v8-cam4-regulator {
 		compatible = "regulator-fixed";
-		regulator-name = "dovdd_1v8_cam5";
+		regulator-name = "dovdd_1v8_cam4";
 		regulator-always-on;
 		regulator-boot-on;
 		regulator-min-microvolt = <1800000>;
 		regulator-max-microvolt = <1800000>;
-		vin-supply = <&dvdd_1v1_cam5>;
+		vin-supply = <&dvdd_1v1_cam4>;
 	};
 
-	avdd_2v9_cam5: avdd-2v9-cam5-regulator {
+	avdd_2v9_cam4: avdd-2v9-cam4-regulator {
 		compatible = "regulator-fixed";
-		regulator-name = "avdd_2v9_cam5";
+		regulator-name = "avdd_2v9_cam4";
 		regulator-always-on;
 		regulator-boot-on;
 		regulator-min-microvolt = <2900000>;
 		regulator-max-microvolt = <2900000>;
-		vin-supply = <&dovdd_1v8_cam5>;
+		vin-supply = <&dovdd_1v8_cam4>;
 	};
 };
 
 &pinctrl {
 	cam {
-		pwdn_gpio_cam5: pwdn-gpio-cam5 {
+		pwdn_gpio_cam4: pwdn-gpio-cam4 {
 			rockchip,pins = <1 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
@@ -56,7 +56,7 @@
 	#size-cells = <0>;
 	status = "okay";
 
-	imx415_5: imx415@1a {
+	imx415_4: imx415@1a {
 		compatible = "sony,imx415";
 		reg = <0x1a>;
 		clocks = <&cru CLK_MIPI_CAMARAOUT_M4>;
@@ -65,9 +65,9 @@
 		pinctrl-0 = <&mipim0_camera4_clk>;
 		power-domains = <&power RK3588_PD_VI>;
 		reset-gpios = <&gpio4 RK_PC4 GPIO_ACTIVE_LOW>;
-		avdd-supply = <&avdd_2v9_cam5>;
-		dovdd-supply = <&dovdd_1v8_cam5>;
-		dvdd-supply = <&dvdd_1v1_cam5>;
+		avdd-supply = <&avdd_2v9_cam4>;
+		dovdd-supply = <&dovdd_1v8_cam4>;
+		dvdd-supply = <&dvdd_1v1_cam4>;
 		rockchip,camera-module-index = <4>;
 		rockchip,camera-module-facing = "back";
 		rockchip,camera-module-name = "EDGEBLE-CAM4K-A00";
