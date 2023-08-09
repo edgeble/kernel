@@ -9,6 +9,7 @@
 
 /* OTG, set dr_mode = "host"; for host */
 &usbdrd_dwc3_0 {
+	dr_mode = "host";
 	status = "okay";
 };
 
