@@ -39,14 +39,6 @@
 		regulator-max-microvolt = <2900000>;
 		vin-supply = <&dovdd_1v8_cam5>;
 	};
-
-	clk_cam_24m: external-camera-clock-24m {
-		compatible = "fixed-clock";
-		clock-frequency = <37125000>;
-//		clock-frequency = <24000000>;
-		clock-output-names = "clk_cam_24m";
-		#clock-cells = <0>;
-	};
 };
 
 &pinctrl {
@@ -57,9 +49,9 @@
 	};
 };
 
-&i2c8 {
+&i2c5 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&i2c8m1_xfer>;
+	pinctrl-0 = <&i2c5m4_xfer>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
@@ -67,8 +59,10 @@
 	imx415_5: imx415@1a {
 		compatible = "sony,imx415";
 		reg = <0x1a>;
-		clocks = <&clk_cam_24m>;
+		clocks = <&cru CLK_MIPI_CAMARAOUT_M4>;
 		clock-names = "xvclk";
+		pinctrl-names = "default";
+		pinctrl-0 = <&mipim0_camera4_clk>;
 		power-domains = <&power RK3588_PD_VI>;
 		reset-gpios = <&gpio4 RK_PC4 GPIO_ACTIVE_LOW>;
 		avdd-supply = <&avdd_2v9_cam5>;
