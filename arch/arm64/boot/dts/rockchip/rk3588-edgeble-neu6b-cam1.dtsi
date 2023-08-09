@@ -49,9 +49,7 @@
 	};
 };
 
-&i2c0 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&i2c0m1_xfer>;
+&i2c7 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
