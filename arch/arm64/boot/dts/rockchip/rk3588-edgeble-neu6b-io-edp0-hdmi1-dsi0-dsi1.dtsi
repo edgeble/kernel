@@ -300,7 +300,7 @@
 	vcc_led1: vcc-led1 {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc_led1";
-		gpio = <&gpio3 RK_PC7 GPIO_ACTIVE_HIGH>;
+		gpio = <&gpio3 RK_PC3 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		pinctrl-names = "default";
 		pinctrl-0 = <&dsi0_backlight_en>; /* LCD1_BL_EN */
@@ -354,7 +354,7 @@
 &pinctrl {
 	backlight-0 {
 		dsi0_backlight_en: dsi0-backlight-en {
-			rockchip,pins = <3 RK_PC7 RK_FUNC_GPIO &pcfg_pull_up>;
+			rockchip,pins = <3 RK_PC3 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
 	};
 
@@ -417,7 +417,7 @@
 	vcc_led2: vcc-led2 {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc_led2";
-		gpio = <&gpio3 RK_PD0 GPIO_ACTIVE_HIGH>;
+		gpio = <&gpio3 RK_PD5 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		pinctrl-names = "default";
 		pinctrl-0 = <&dsi1_backlight_en>;
@@ -471,7 +471,7 @@
 &pinctrl {
 	backlight-1 {
 		dsi1_backlight_en: dsi1-backlight-en {
-			rockchip,pins = <3 RK_PD0 RK_FUNC_GPIO &pcfg_pull_up>;
+			rockchip,pins = <3 RK_PD5 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
 	};
 
