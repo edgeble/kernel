@@ -9,8 +9,8 @@
 #include "rk3588-edgeble-neu6.dtsi"
 
 / {
-	model = "Edgeble Neu6B-EDP0-HDMI1-DSI0/1";
-	compatible = "edgeble,neural-compute-module-6a-io", "rockchip,rk3588";
+	model = "Edgeble Neu6B-DSI1";
+	compatible = "edgeble,neural-compute-module-6b-io", "rockchip,rk3588";
 };
 
-#include "rk3588-edgeble-neu6b-io-edp0-hdmi1-dsi0-dsi1.dtsi"
+#include "rk3588-edgeble-neu6b-io-dsi1.dtsi"
