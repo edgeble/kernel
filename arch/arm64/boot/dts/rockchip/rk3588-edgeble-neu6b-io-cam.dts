@@ -14,9 +14,9 @@
 };
 
 #include "rk3588-edgeble-neu6b-io-dp0-dp1-hdmi1-dsi0.dtsi"
+#include "rk3588-edgeble-neu6b-cam0.dtsi"
 #include "rk3588-edgeble-neu6b-cam1.dtsi"
-#include "rk3588-edgeble-neu6b-cam2.dtsi"
+#include "rk3588-edgeble-neu6b-io-cam2.dtsi"
 #include "rk3588-edgeble-neu6b-io-cam3.dtsi"
 #include "rk3588-edgeble-neu6b-io-cam4.dtsi"
 #include "rk3588-edgeble-neu6b-io-cam5.dtsi"
-#include "rk3588-edgeble-neu6b-io-cam6.dtsi"

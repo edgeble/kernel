@@ -2,17 +2,17 @@
 /*
  * Copyright (c) 2023 Edgeble AI Technologies Pvt. Ltd.
  *
- * DT-overlay for the Edgeble Neu6B-IO CAM6-IMX415.
+ * DT-overlay for the Edgeble Neu6B-IO CAM3-IMX415.
  */
 
 / {
-	dvdd_1v1_cam6: dvdd-1v1-cam6-regulator {
+	dvdd_1v1_cam2: dvdd-1v1-cam2-regulator {
 		compatible = "regulator-fixed";
-		regulator-name = "dvdd_1v1_cam6";
+		regulator-name = "dvdd_1v1_cam2";
 		enable-active-high;
-		gpio = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
+		gpio = <&gpio1 RK_PA7 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
-		pinctrl-0 = <&pwdn_gpio_cam6>;
+		pinctrl-0 = <&pwdn_gpio_cam2>;
 		regulator-always-on;
 		regulator-boot-on;
 		regulator-min-microvolt = <1100000>;
@@ -20,72 +20,70 @@
 		vin-supply = <&vcc5v0_sys>;
 	};
 
-	dovdd_1v8_cam6: dovdd-1v8-cam6-regulator {
+	dovdd_1v8_cam2: dovdd-1v8-cam2-regulator {
 		compatible = "regulator-fixed";
-		regulator-name = "dovdd_1v8_cam6";
+		regulator-name = "dovdd_1v8_cam2";
 		regulator-always-on;
 		regulator-boot-on;
 		regulator-min-microvolt = <1800000>;
 		regulator-max-microvolt = <1800000>;
-		vin-supply = <&dvdd_1v1_cam6>;
+		vin-supply = <&dvdd_1v1_cam2>;
 	};
 
-	avdd_2v9_cam6: avdd-2v9-cam6-regulator {
+	avdd_2v9_cam2: avdd-2v9-cam2-regulator {
 		compatible = "regulator-fixed";
-		regulator-name = "avdd_2v9_cam6";
+		regulator-name = "avdd_2v9_cam2";
 		regulator-always-on;
 		regulator-boot-on;
 		regulator-min-microvolt = <2900000>;
 		regulator-max-microvolt = <2900000>;
-		vin-supply = <&dovdd_1v8_cam6>;
+		vin-supply = <&dovdd_1v8_cam2>;
 	};
 };
 
 &pinctrl {
-	cam {
-		pwdn_gpio_cam6: pwdn-gpio-cam6 {
-			rockchip,pins = <1 RK_PB2 RK_FUNC_GPIO &pcfg_pull_none>;
+	cam2 {
+		pwdn_gpio_cam2: pwdn-gpio-cam2 {
+			rockchip,pins = <1 RK_PA7 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 };
 
-&i2c5 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&i2c5m4_xfer>;
+&i2c3 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
 
-	imx415_6: imx415@1a {
+	imx415_2: imx415@1a {
 		compatible = "sony,imx415";
 		reg = <0x1a>;
-		clocks = <&cru CLK_MIPI_CAMARAOUT_M4>;
+		clocks = <&cru CLK_MIPI_CAMARAOUT_M3>;
 		clock-names = "xvclk";
 		pinctrl-names = "default";
-		pinctrl-0 = <&mipim0_camera4_clk>;
+		pinctrl-0 = <&mipim0_camera3_clk>;
 		power-domains = <&power RK3588_PD_VI>;
-		reset-gpios = <&gpio0 RK_PA0 GPIO_ACTIVE_LOW>;
-		avdd-supply = <&avdd_2v9_cam6>;
-		dovdd-supply = <&dovdd_1v8_cam6>;
-		dvdd-supply = <&dvdd_1v1_cam6>;
-		rockchip,camera-module-index = <5>;
+		reset-gpios = <&gpio4 RK_PC2 GPIO_ACTIVE_LOW>;
+		avdd-supply = <&avdd_2v9_cam2>;
+		dovdd-supply = <&dovdd_1v8_cam2>;
+		dvdd-supply = <&dvdd_1v1_cam2>;
+		rockchip,camera-module-index = <2>;
 		rockchip,camera-module-facing = "back";
 		rockchip,camera-module-name = "EDGEBLE-CAM4K-A00";
 		rockchip,camera-module-lens-name = "DEFAULT";
 		port {
-			imx415_6_out0: endpoint {
-				remote-endpoint = <&mipidphy5_in_ucam0>;
-				data-lanes = <3 4>;
+			imx415_2_out0: endpoint {
+				remote-endpoint = <&mipidphy1_in_ucam0>;
+				data-lanes = <1 2>;
 			};
 		};
 	};
 };
 
-&csi2_dphy1_hw {
+&csi2_dphy0_hw {
 	status = "okay";
 };
 
-&csi2_dphy5 {
+&csi2_dphy1 {
 	status = "okay";
 
 	ports {
@@ -97,10 +95,10 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			mipidphy5_in_ucam0: endpoint@1 {
+			mipidphy1_in_ucam0: endpoint@1 {
 				reg = <1>;
-				remote-endpoint = <&imx415_6_out0>;
-				data-lanes = <3 4>;
+				remote-endpoint = <&imx415_2_out0>;
+				data-lanes = <1 2>;
 			};
 		};
 
@@ -109,15 +107,15 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			csidphy5_out: endpoint@0 {
+			csidphy1_out: endpoint@0 {
 				reg = <0>;
-				remote-endpoint = <&mipi5_csi2_input>;
+				remote-endpoint = <&mipi2_csi2_input>;
 			};
 		};
 	};
 };
 
-&mipi5_csi2 {
+&mipi2_csi2 {
 	status = "okay";
 
 	ports {
@@ -129,9 +127,9 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			mipi5_csi2_input: endpoint@1 {
+			mipi2_csi2_input: endpoint@1 {
 				reg = <1>;
-				remote-endpoint = <&csidphy5_out>;
+				remote-endpoint = <&csidphy1_out>;
 			};
 		};
 
@@ -140,9 +138,9 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			mipi5_csi2_output: endpoint@0 {
+			mipi2_csi2_output: endpoint@0 {
 				reg = <0>;
-				remote-endpoint = <&cif_mipi5_in0>;
+				remote-endpoint = <&cif_mipi2_in0>;
 			};
 		};
 	};
@@ -152,22 +150,22 @@
 	status = "okay";
 };
 
-&rkcif_mipi_lvds5 {
+&rkcif_mipi_lvds2 {
 	status = "okay";
 
 	port {
-		cif_mipi5_in0: endpoint {
-			remote-endpoint = <&mipi5_csi2_output>;
+		cif_mipi2_in0: endpoint {
+			remote-endpoint = <&mipi2_csi2_output>;
 		};
 	};
 };
 
-&rkcif_mipi_lvds5_sditf {
+&rkcif_mipi_lvds2_sditf {
 	status = "okay";
 
 	port {
-		mipi_lvds5_sditf: endpoint {
-			remote-endpoint = <&isp1_vir2>;
+		mipi_lvds2_sditf: endpoint {
+			remote-endpoint = <&isp0_vir1>;
 		};
 	};
 };
@@ -176,24 +174,24 @@
 	status = "okay";
 };
 
-&rkisp1 {
+&rkisp0 {
 	status = "okay";
 };
 
-&isp1_mmu {
+&isp0_mmu {
 	status = "okay";
 };
 
-&rkisp1_vir2 {
+&rkisp0_vir1 {
 	status = "okay";
 
 	port {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		isp1_vir2: endpoint@0 {
+		isp0_vir1: endpoint@0 {
 			reg = <0>;
-			remote-endpoint = <&mipi_lvds5_sditf>;
+			remote-endpoint = <&mipi_lvds2_sditf>;
 		};
 	};
 };

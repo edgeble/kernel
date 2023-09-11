@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2023 Edgeble AI Technologies Pvt. Ltd.
  *
- * DT-overlay for the Edgeble Neu6B-IO CAM5-IMX415.
+ * DT-overlay for the Edgeble Neu6B-IO CAM6-IMX415.
  */
 
 / {
@@ -10,7 +10,7 @@
 		compatible = "regulator-fixed";
 		regulator-name = "dvdd_1v1_cam5";
 		enable-active-high;
-		gpio = <&gpio1 RK_PB1 GPIO_ACTIVE_HIGH>;
+		gpio = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&pwdn_gpio_cam5>;
 		regulator-always-on;
@@ -44,7 +44,7 @@
 &pinctrl {
 	cam {
 		pwdn_gpio_cam5: pwdn-gpio-cam5 {
-			rockchip,pins = <1 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;
+			rockchip,pins = <1 RK_PB2 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 };
@@ -64,18 +64,18 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&mipim0_camera4_clk>;
 		power-domains = <&power RK3588_PD_VI>;
-		reset-gpios = <&gpio4 RK_PC4 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio0 RK_PA0 GPIO_ACTIVE_LOW>;
 		avdd-supply = <&avdd_2v9_cam5>;
 		dovdd-supply = <&dovdd_1v8_cam5>;
 		dvdd-supply = <&dvdd_1v1_cam5>;
-		rockchip,camera-module-index = <4>;
+		rockchip,camera-module-index = <5>;
 		rockchip,camera-module-facing = "back";
 		rockchip,camera-module-name = "EDGEBLE-CAM4K-A00";
 		rockchip,camera-module-lens-name = "DEFAULT";
 		port {
 			imx415_5_out0: endpoint {
-				remote-endpoint = <&mipidphy4_in_ucam0>;
-				data-lanes = <1 2>;
+				remote-endpoint = <&mipidphy5_in_ucam0>;
+				data-lanes = <3 4>;
 			};
 		};
 	};
@@ -85,7 +85,7 @@
 	status = "okay";
 };
 
-&csi2_dphy4 {
+&csi2_dphy5 {
 	status = "okay";
 
 	ports {
@@ -97,10 +97,10 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			mipidphy4_in_ucam0: endpoint@1 {
+			mipidphy5_in_ucam0: endpoint@1 {
 				reg = <1>;
 				remote-endpoint = <&imx415_5_out0>;
-				data-lanes = <1 2>;
+				data-lanes = <3 4>;
 			};
 		};
 
@@ -109,15 +109,15 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			csidphy4_out: endpoint@0 {
+			csidphy5_out: endpoint@0 {
 				reg = <0>;
-				remote-endpoint = <&mipi4_csi2_input>;
+				remote-endpoint = <&mipi5_csi2_input>;
 			};
 		};
 	};
 };
 
-&mipi4_csi2 {
+&mipi5_csi2 {
 	status = "okay";
 
 	ports {
@@ -129,9 +129,9 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			mipi4_csi2_input: endpoint@1 {
+			mipi5_csi2_input: endpoint@1 {
 				reg = <1>;
-				remote-endpoint = <&csidphy4_out>;
+				remote-endpoint = <&csidphy5_out>;
 			};
 		};
 
@@ -140,9 +140,9 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			mipi4_csi2_output: endpoint@0 {
+			mipi5_csi2_output: endpoint@0 {
 				reg = <0>;
-				remote-endpoint = <&cif_mipi4_in0>;
+				remote-endpoint = <&cif_mipi5_in0>;
 			};
 		};
 	};
@@ -152,22 +152,22 @@
 	status = "okay";
 };
 
-&rkcif_mipi_lvds4 {
+&rkcif_mipi_lvds5 {
 	status = "okay";
 
 	port {
-		cif_mipi4_in0: endpoint {
-			remote-endpoint = <&mipi4_csi2_output>;
+		cif_mipi5_in0: endpoint {
+			remote-endpoint = <&mipi5_csi2_output>;
 		};
 	};
 };
 
-&rkcif_mipi_lvds4_sditf {
+&rkcif_mipi_lvds5_sditf {
 	status = "okay";
 
 	port {
-		mipi_lvds4_sditf: endpoint {
-			remote-endpoint = <&isp0_vir2>;
+		mipi_lvds5_sditf: endpoint {
+			remote-endpoint = <&isp1_vir2>;
 		};
 	};
 };
@@ -176,24 +176,24 @@
 	status = "okay";
 };
 
-&rkisp0 {
+&rkisp1 {
 	status = "okay";
 };
 
-&isp0_mmu {
+&isp1_mmu {
 	status = "okay";
 };
 
-&rkisp0_vir2 {
+&rkisp1_vir2 {
 	status = "okay";
 
 	port {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		isp0_vir2: endpoint@0 {
+		isp1_vir2: endpoint@0 {
 			reg = <0>;
-			remote-endpoint = <&mipi_lvds4_sditf>;
+			remote-endpoint = <&mipi_lvds5_sditf>;
 		};
 	};
 };
