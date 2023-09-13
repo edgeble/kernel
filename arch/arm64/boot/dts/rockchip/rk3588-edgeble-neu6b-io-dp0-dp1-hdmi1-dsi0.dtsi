@@ -404,7 +404,7 @@
 };
 
 &dsi0 {
-	status = "okay";
+	status = "disabled";
 	rockchip,lane-rate = <480>;
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -521,7 +521,7 @@
 };
 
 &dsi1 {
-	status = "okay";
+	status = "disabled";
 	rockchip,lane-rate = <480>;
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -586,12 +586,12 @@
 		};
 
 		route_dsi0: route-dsi0 {
-			status = "okay";
+			status = "disabled";
 			connect = <&vp2_out_dsi0>;
 		};
 
 		route_dsi1: route-dsi1 {
-			status = "okay";
+			status = "disabled";
 			connect = <&vp3_out_dsi1>;
 		};
 	};
@@ -646,7 +646,7 @@
 };
 
 &dsi0_in_vp2 {
-	status = "okay";
+	status = "disabled";
 };
 
 &dsi0_in_vp3 {
@@ -658,7 +658,7 @@
 };
 
 &dsi1_in_vp3 {
-	status = "okay";
+	status = "disabled";
 };
 
 &vop {
