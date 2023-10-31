@@ -5,15 +5,13 @@
 
 /dts-v1/;
 
-#include "rk3588.dtsi"
+#include "rk3588j.dtsi"
 #include "rk3588-edgeble-neu6b-io.dtsi"
 
 / {
-	model = "Edgeble Neu6A-CAM0-CAM1-CAM2-CAM3-CAM4-CAM5";
-	compatible = "edgeble,neural-compute-module-6a-io", "rockchip,rk3588";
+	model = "Edgeble Neu6B-CAM2-CAM3";
+	compatible = "edgeble,neural-compute-module-6b-io", "rockchip,rk3588";
 };
 
 #include "rk3588-edgeble-neu6b-io-dp0-dp1-hdmi1-dsi0.dtsi"
-#include "rk3588-edgeble-neu6b-cam01.dtsi"
 #include "rk3588-edgeble-neu6b-io-cam23.dtsi"
-#include "rk3588-edgeble-neu6b-io-cam45.dtsi"

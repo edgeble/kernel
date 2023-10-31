@@ -1,0 +1,7 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2023 Edgeble AI Technologies Pvt. Ltd.
+ */
+
+#include "rk3588-edgeble-neu6b-cam0.dtsi"
+#include "rk3588-edgeble-neu6b-cam1.dtsi"
