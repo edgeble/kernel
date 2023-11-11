@@ -1,0 +1,50 @@
+name: Linux CI runner for NCM6B
+
+on:
+  push:
+    branches:
+      - linux-5.10-gen-rkr3.4
+
+jobs:
+  build:
+    permissions: write-all
+    name: kernel ncm6b runner
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v1
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt install -y gcc-9 openssl devscripts build-essential crossbuild-essential-arm64 bc bison
+          sudo apt install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu libelf-dev libssl-dev kmod cpio libssl-dev
+
+      - name: Clone and compile
+        run: |
+          mkdir linux-openaia && cd linux-openaia
+          git clone https://github.com/openaia/kernel.git -b linux-5.10-gen-rkr3.4
+          cd kernel
+          export ARCH=arm64
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          sudo dpkg --add-architecture arm64
+          make rockchip_linux_defconfig
+          make dtbs Image -j 16
+ 
+      - name: Copy deb files and create archive
+        run: |
+          mkdir linux && mkdir -p dtb/rockchip
+          cp -fv linux-openaia/kernel/arch/arm64/boot/Image linux
+          cp -fv linux-openaia/kernel/arch/arm64/boot/dts/rockchip/rk3588-edgeble-*.dtb dtb/rockchip
+          cp -frv dtb linux
+          tar -Jcf linux.tar.xz linux
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "ncm6b-v2023.11"
+          files: |
+           linux.tar.xz
+        env:
+           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
