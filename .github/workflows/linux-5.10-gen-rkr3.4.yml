@@ -23,27 +23,26 @@ jobs:
 
       - name: Clone and compile
         run: |
-          mkdir linux-openaia && cd linux-openaia
-          git clone https://github.com/openaia/kernel.git -b linux-5.10-gen-rkr3.4
-          cd kernel
+          mkdir out
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
-          sudo dpkg --add-architecture arm64
           make rockchip_linux_defconfig
           make dtbs Image -j 16
+          make modules -j 16
+          sudo make modules_install INSTALL_MOD_PATH=out
  
       - name: Copy deb files and create archive
         run: |
-          mkdir linux && mkdir -p dtb/rockchip
-          cp -fv linux-openaia/kernel/arch/arm64/boot/Image linux
-          cp -fv linux-openaia/kernel/arch/arm64/boot/dts/rockchip/rk3588-edgeble-*.dtb dtb/rockchip
-          cp -frv dtb linux
+          mkdir linux && mkdir -p dtb/rockchip && mkdir -p modules
+          cp -fv arch/arm64/boot/dts/rockchip/rk3588-edgeble-*.dtb dtb/rockchip
+          cp -frv out/lib/modules/* modules
+          cp -frv arch/arm64/boot/Image dtb modules linux
           tar -Jcf linux.tar.xz linux
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "ncm6b-v2023.11"
+          tag_name: "v2023.11-6TOPS"
           files: |
            linux.tar.xz
         env:
