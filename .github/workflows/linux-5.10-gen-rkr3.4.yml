@@ -43,7 +43,10 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "v2023.11-6TOPS"
+          tag_name: "v2023.12-6TOPS-rc1"
+          body: |
+            ## Linux Kernel 6TOPS rc1
+            - Fix for USB3.0 hang
           files: |
            linux.tar.xz
            modules.tar.xz
