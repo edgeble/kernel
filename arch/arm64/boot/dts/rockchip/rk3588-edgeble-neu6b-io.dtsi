@@ -673,3 +673,36 @@
 &i2s7_8ch {
 	status = "okay";
 };
+
+&usbdrd3_0 {
+	status = "okay";
+};
+
+/* OTG, set dr_mode = "host"; for host */
+&usbdrd_dwc3_0 {
+	status = "okay";
+};
+
+&u2phy0_otg {
+	status = "okay";
+};
+
+&u2phy0 {
+	status = "okay";
+};
+
+&usbdrd3_1 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_1 {
+	status = "okay";
+};
+
+&u2phy1_otg {
+	status = "okay";
+};
+
+&u2phy1 {
+	status = "okay";
+};

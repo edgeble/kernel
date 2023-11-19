@@ -3,23 +3,6 @@
  * Copyright (c) 2023 Edgeble AI Technologies Pvt. Ltd.
  */
 
-&usbdrd3_0 {
-	status = "okay";
-};
-
-/* OTG, set dr_mode = "host"; for host */
-&usbdrd_dwc3_0 {
-	status = "okay";
-};
-
-&u2phy0_otg {
-	status = "okay";
-};
-
-&u2phy0 {
-	status = "okay";
-};
-
 &usbdp_phy0_u3 {
 	status = "okay";
 };
@@ -29,6 +12,18 @@
 };
 
 /* DP0 */
+/ {
+	dp0_sound: dp0-sound {
+		status = "okay";
+		compatible = "rockchip,hdmi";
+		rockchip,mclk-fs = <512>;
+		rockchip,card-name= "rockchip,dp0";
+		rockchip,cpu = <&spdif_tx2>;
+		rockchip,codec = <&dp0 1>;
+		rockchip,jack-det;
+	};
+};
+
 &pinctrl {
 	dp0 {
 		dp0_hpd: dp0-hpd {
@@ -44,6 +39,10 @@
 	hpd-gpios = <&gpio1 RK_PA0 GPIO_ACTIVE_HIGH>; /* DP1_HPDIN_M0 */
 };
 
+&spdif_tx2 {
+	status = "okay";
+};
+
 &usbdp_phy0_dp {
 	status = "okay";
 };
@@ -51,22 +50,6 @@
 &usbdp_phy0 {
 	status = "okay";
 	rockchip,dp-lane-mux = < 2 3 >;
-};
-
-&usbdrd3_1 {
-	status = "okay";
-};
-
-&usbdrd_dwc3_1 {
-	status = "okay";
-};
-
-&u2phy1_otg {
-	status = "okay";
-};
-
-&u2phy1 {
-	status = "okay";
 };
 
 &usbdp_phy1_u3 {
@@ -78,6 +61,18 @@
 };
 
 /* DP1 */
+/ {
+	dp1_sound: dp1-sound {
+		status = "okay";
+		compatible = "rockchip,hdmi";
+		rockchip,card-name= "rockchip,dp1";
+		rockchip,mclk-fs = <512>;
+		rockchip,cpu = <&spdif_tx5>;
+		rockchip,codec = <&dp1 1>;
+		rockchip,jack-det;
+	};
+};
+
 &pinctrl {
 	dp1 {
 		dp1_hpd: dp1-hpd {
@@ -91,6 +86,10 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&dp1_hpd>;
 	hpd-gpios = <&gpio1 RK_PA1 GPIO_ACTIVE_HIGH>; /* DP2_HPDIN_M0 */
+};
+
+&spdif_tx5 {
+	status = "okay";
 };
 
 &usbdp_phy1_dp {

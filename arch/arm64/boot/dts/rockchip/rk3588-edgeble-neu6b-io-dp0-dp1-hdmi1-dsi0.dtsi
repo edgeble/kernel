@@ -3,23 +3,6 @@
  * Copyright (c) 2023 Edgeble AI Technologies Pvt. Ltd.
  */
 
-&usbdrd3_0 {
-	status = "okay";
-};
-
-/* OTG, set dr_mode = "host"; for host */
-&usbdrd_dwc3_0 {
-	status = "okay";
-};
-
-&u2phy0_otg {
-	status = "okay";
-};
-
-&u2phy0 {
-	status = "okay";
-};
-
 &usbdp_phy0_u3 {
 	status = "okay";
 };
@@ -67,22 +50,6 @@
 &usbdp_phy0 {
 	status = "okay";
 	rockchip,dp-lane-mux = < 2 3 >;
-};
-
-&usbdrd3_1 {
-	status = "okay";
-};
-
-&usbdrd_dwc3_1 {
-	status = "okay";
-};
-
-&u2phy1_otg {
-	status = "okay";
-};
-
-&u2phy1 {
-	status = "okay";
 };
 
 &usbdp_phy1_u3 {
@@ -395,6 +362,14 @@
 			rockchip,pins = <1 RK_PC6 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
 	};
+
+	focaltech {
+		focaltech_gpio: focaltech-gpio {
+			rockchip,pins =
+					<3 RK_PB7 RK_FUNC_GPIO &pcfg_pull_none>,
+					<0 RK_PD3 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
 };
 
 &pwm4 {
@@ -442,6 +417,26 @@
 
 &mipi_dcphy0 {
 	status = "okay";
+};
+
+&i2c6 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c6m0_xfer>;
+	clock-frequency = <400000>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	focaltech: focaltech@38 {
+		status = "okay";
+		compatible = "focaltech,fts";
+		reg = <0x38>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&focaltech_gpio>;
+		focaltech,irq-gpio = <&gpio0 RK_PD3 IRQ_TYPE_LEVEL_LOW>;
+		focaltech,reset-gpio = <&gpio3 RK_PB7 GPIO_ACTIVE_HIGH>;
+		focaltech,display-coords = <0 0 799 1279>;
+	};
 };
 
 /* DSI1 */
@@ -512,6 +507,14 @@
 			rockchip,pins = <0 RK_PB2 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
 	};
+
+	focaltech-1 {
+		focaltech_gpio_1: focaltech-gpio-1 {
+			rockchip,pins =
+					<4 RK_PB2 RK_FUNC_GPIO &pcfg_pull_none>,
+					<3 RK_PD0 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
 };
 
 &pwm8 {
@@ -559,6 +562,26 @@
 
 &mipi_dcphy1 {
 	status = "okay";
+};
+
+&i2c8 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c8m3_xfer>;
+	clock-frequency = <400000>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	focaltech_1: focaltech-1@38 {
+		status = "okay";
+		compatible = "focaltech,fts";
+		reg = <0x38>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&focaltech_gpio_1>;
+		focaltech,irq-gpio = <&gpio3 RK_PD0 IRQ_TYPE_LEVEL_LOW>;
+		focaltech,reset-gpio = <&gpio4 RK_PB2 GPIO_ACTIVE_HIGH>;
+		focaltech,display-coords = <0 0 799 1279>;
+	};
 };
 
 &display_subsystem {
