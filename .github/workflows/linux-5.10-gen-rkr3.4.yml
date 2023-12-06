@@ -43,10 +43,10 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "v2023.12-6TOPS-rc1"
+          tag_name: "v2023.12-6TOPS-rc2"
           body: |
-            ## Linux Kernel 6TOPS rc1
-            - Fix for USB3.0 hang
+            ## Linux Kernel 6TOPS rc2
+            - RTLRTW8852BE WiFi6/BT
           files: |
            linux.tar.xz
            modules.tar.xz
