@@ -35,6 +35,9 @@ jobs:
         run: |
           mkdir linux && mkdir -p dtb/rockchip && mkdir -p modules
           cp -fv arch/arm64/boot/dts/rockchip/rk3588-edgeble-*.dtb dtb/rockchip
+          cp -fv arch/arm64/boot/dts/rockchip/rk3588-rock-5b.dtb dtb/rockchip
+          cp -fv arch/arm64/boot/dts/rockchip/overlay/*rk3588*.dtbo dtb/rockchip
+          cp -fv arch/arm64/boot/dts/rockchip/overlay/rock-5b*.dtbo dtb/rockchip
           cp -frv arch/arm64/boot/Image dtb linux
           tar -Jcf linux.tar.xz linux
           cp -frv out/lib/modules/* modules
@@ -43,10 +46,10 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "v2023.12-6TOPS-rc2"
+          tag_name: "v2024.02-6TOPS-rc1"
           body: |
-            ## Linux Kernel 6TOPS rc2
-            - RTLRTW8852BE WiFi6/BT
+            ## Linux Kernel 6TOPS rc1
+            - Include 5B DT
           files: |
            linux.tar.xz
            modules.tar.xz
